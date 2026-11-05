@@ -35,8 +35,8 @@ const extOf = (name, fallback) => (String(name || '').match(/\.([a-z0-9]+)$/i)?.
 export function imagePath(img, variant /* light|dark */) {
   return `obrazki/${slug(img.name)}-${variant === 'dark' ? 'ciemny' : 'jasny'}.png`;
 }
-export function fontPath(font) {
-  return `fonty/${slug(font.family)}.${extOf(font.file?.name, 'woff2')}`;
+export function fontPath(font, alt) {
+  return `fonty/${slug(font.family)}.${alt === 'woff' ? 'woff' : extOf(font.file?.name, 'woff2')}`;
 }
 const joinUrl = (base, path) => base ? base.replace(/\/?$/, '/') + path : '';
 
@@ -195,7 +195,10 @@ export function fontFaces(project, target) {
     const src = fontSrc(project, f, target);
     if (!src) return '';
     const fmt = fontFormat(f.file?.name || src);
-    return `  @font-face { font-family:'${f.family.replace(/'/g, '')}'; font-weight:400; font-style:normal; src:url('${src}')${fmt ? ` format('${fmt}')` : ''}; }`;
+    let srcs = `url('${src}')${fmt ? ` format('${fmt}')` : ''}`;
+    // zapasowy WOFF: ten sam folder i nazwa, końcówka .woff
+    if (target === 'email' && f.woff && /\.woff2(\?|#|$)/i.test(src)) srcs += `, url('${src.replace(/\.woff2(?=\?|#|$)/i, '.woff')}') format('woff')`;
+    return `  @font-face { font-family:'${f.family.replace(/'/g, '')}'; font-weight:400; font-style:normal; src:${srcs}; }`;
   }).filter(Boolean).join('\n');
 }
 
@@ -236,6 +239,9 @@ export function assetFiles(project) {
     if (img.light?.data) files.push({ path: imagePath(img, 'light'), data: img.light.data });
     if (img.dark && img.dark.mode !== 'none' && img.dark.data) files.push({ path: imagePath(img, 'dark'), data: img.dark.data });
   }
-  for (const f of project.fonts) if (f.file?.data) files.push({ path: fontPath(f), data: f.file.data });
+  for (const f of project.fonts) {
+    if (f.file?.data) files.push({ path: fontPath(f), data: f.file.data });
+    if (f.woff?.data) files.push({ path: fontPath(f, 'woff'), data: f.woff.data });
+  }
   return files;
 }

@@ -7,6 +7,7 @@ import htm from 'htm';
 import { db, uid, newProject, migrate, clone } from './store.js';
 import { signature, darkRules, fullHtml, appleMailCode, imagePath, fontPath, assetFiles, FALLBACKS, esc, slug } from './signature.js';
 import { imageFromFile, tintImage, hasAlpha, fontFromFile, registerFonts, exportPackage, importPackage, download } from './files.js';
+import { convertFont, kb } from './fontconv.js';
 
 const html = htm.bind(h);
 
@@ -299,23 +300,50 @@ const downloadData = (data, name) => fetch(data).then(r => r.blob()).then(b => d
 
 function BrandFonts({ project, update, toast }) {
   const set = (id, k, v) => update(p => { p.fonts.find(f => f.id === id)[k] = v; }, `font.${id}.${k}`);
+  const [busy, setBusy] = useState(null);
   const onFile = async (id, file) => {
-    if (!/\.(woff2?|ttf|otf)$/i.test(file.name)) return toast('Wgraj plik .woff2, .woff, .ttf lub .otf.');
+    if (!/\.(woff2?|ttf|otf)$/i.test(file.name)) return toast('Wgraj plik .otf, .ttf, .woff2 lub .woff.');
     const ff = await fontFromFile(file);
-    update(p => { const f = p.fonts.find(x => x.id === id); f.file = { data: ff.data, name: ff.name, type: ff.type }; if (/^(Krój|Nowy krój)/.test(f.family)) f.family = ff.family; });
+    let conv = null;
+    if (/\.(otf|ttf)$/i.test(file.name)) {
+      setBusy(id);
+      try { conv = await convertFont(file); } catch (e) { toast(e.message); }
+      setBusy(null);
+    }
+    update(p => {
+      const f = p.fonts.find(x => x.id === id);
+      if (/^(Krój|Nowy krój)/.test(f.family)) f.family = ff.family;
+      const base = slug(f.family);
+      if (conv) {
+        f.file = { data: conv.woff2.data, name: base + '.woff2', type: 'font/woff2', size: conv.woff2.size, from: file.name, fromSize: conv.original };
+        f.woff = { data: conv.woff.data, name: base + '.woff', size: conv.woff.size };
+      } else { f.file = { data: ff.data, name: file.name, type: ff.type }; f.woff = null; }
+    });
+    if (conv) toast(`Gotowe: WOFF2 ${kb(conv.woff2.size)} i WOFF ${kb(conv.woff.size)} (z ${kb(conv.original)}).`);
+  };
+  const fontFolder = async f => {
+    const zip = new window.JSZip(), b = slug(f.family);
+    zip.file(b + '.' + (f.file.name.split('.').pop()), await fetch(f.file.data).then(r => r.blob()));
+    if (f.woff) zip.file(b + '.woff', await fetch(f.woff.data).then(r => r.blob()));
+    zip.file('_headers', HEADERS);
+    download(await zip.generateAsync({ type: 'blob' }), `${b}-font-na-serwer.zip`);
   };
   return html`
-    <p class="note">Wgraj plik<sup class="idx">[1]</sup> i wklej jego link na serwerze<sup class="idx">[2]</sup>. Bez linku stopka użyje zamiennika — nic się nie psuje. Font w mailach wymaga <b>licencji webowej</b>.</p>
+    <p class="note">Wgraj OTF lub TTF<sup class="idx">[1]</sup>, pobierz gotowe pliki na serwer<sup class="idx">[2]</sup>, wklej link<sup class="idx">[3]</sup>. Bez linku stopka użyje zamiennika — nic się nie psuje. Font w mailach wymaga <b>licencji webowej</b>.</p>
     <${NetlifySteps} project=${project} />
     ${project.fonts.map(f => html`
       <${Card} id=${'font-' + f.id} title=${f.family} titleStyle=${`font-family:'${f.family}',${FALLBACKS[f.fallback] || 'sans-serif'}`}
         tools=${project.fonts.length > 1 && html`<button type="button" title="Usuń" onClick=${() => update(p => { p.fonts = p.fonts.filter(x => x.id !== f.id); p.blocks.forEach(b => { if (b.font === f.id) b.font = p.fonts[0].id; }); })}><${Icon} d=${I.del} /></button>`}>
         <${Text} label="Nazwa kroju" value=${f.family} onInput=${v => set(f.id, 'family', v)} />
-        <${Field} label=${Lbl('Plik kroju', 1)}>
-          <div class="file"><span class="file__name">${f.file ? f.file.name : '.woff2, .woff, .ttf lub .otf'}</span>
-            <${FileBtn} accept=".woff2,.woff,.ttf,.otf" onFile=${file => onFile(f.id, file)} small>${f.file ? 'Zmień' : 'Wgraj font'}<//>
-            ${f.file && html`<button type="button" class="btn is--small is--ghost" onClick=${() => set(f.id, 'file', null)}>Usuń</button>`}</div><//>
-        <${LinkField} label=${Lbl('Link do pliku na serwerze', 2)} kind="font" value=${f.url} onInput=${v => set(f.id, 'url', v)} placeholder="https://twojafirma.pl/email/font.woff2" />
+        <${Field} label=${Lbl('Plik kroju', 1)} hint=${!f.file ? 'Najlepiej .otf albo .ttf — kreator zrobi z niego WOFF2 i WOFF, czyli formaty do maili.' : ''}>
+          <div class="file"><span class="file__name">${busy === f.id ? 'Konwertuję…' : f.file ? (f.file.from ? `${f.file.from} → .woff2 + .woff` : f.file.name) : '.otf, .ttf, .woff2 lub .woff'}</span>
+            <${FileBtn} accept=".otf,.ttf,.woff2,.woff" onFile=${file => onFile(f.id, file)} small>${f.file ? 'Zmień' : 'Wgraj font'}<//>
+            ${f.file && html`<button type="button" class="btn is--small is--ghost" onClick=${() => update(p => { const x = p.fonts.find(y => y.id === f.id); x.file = null; x.woff = null; })}>Usuń</button>`}</div><//>
+        ${f.file && html`<${Field} label=${Lbl('Pliki na serwer', 2)}>
+          <span class="dl"><button type="button" class="btn is--small" onClick=${() => fontFolder(f)}>Pobierz (.zip)</button>
+          <code class="dl__name">${f.file.name}${f.file.size ? ` ${kb(f.file.size)}` : ''}${f.woff ? ` · ${f.woff.name} ${kb(f.woff.size)}` : ''}</code></span><//>`}
+        <${LinkField} label=${Lbl('Link do pliku na serwerze', f.file ? 3 : 2)} kind="font" value=${f.url} onInput=${v => set(f.id, 'url', v)} placeholder=${`https://twojafirma.pl/email/${f.file ? f.file.name : 'font.woff2'}`} />
+        ${f.woff && html`<p class="f__hint">Wklej link do pliku <code>.woff2</code>. Plik <code>.woff</code> połóż obok, w tym samym folderze — stopka sama go znajdzie.</p>`}
         <${Select} label="Zamiennik" value=${f.fallback} onChange=${v => set(f.id, 'fallback', v)} hint="Dla Gmaila, Outlooka i iPhone’a — nie obsługują własnych fontów."
           options=${[['serif', 'Szeryfowy — Georgia'], ['sans', 'Bezszeryfowy — Helvetica / Arial'], ['mono', 'Monospace — Menlo / Consolas'], ['custom', 'Własny stos…']]} />
         ${f.fallback === 'custom' && html`<${Text} label="Własny stos" value=${f.fallbackCustom} onInput=${v => set(f.id, 'fallbackCustom', v)} placeholder="Verdana, Arial, sans-serif" />`}

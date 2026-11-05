@@ -47,7 +47,8 @@ i użycie w wiadomościach e-mail.
 6. SKŁADNIKI OSÓB TRZECICH
 
 Repozytorium zawiera oprogramowanie open source na własnych licencjach:
-Preact (MIT), htm (Apache 2.0), JSZip (MIT lub GPLv3) — pełne teksty
+Preact (MIT), htm (Apache 2.0), JSZip (MIT lub GPLv3), wawoff2 — konwerter
+WOFF2 oparty na bibliotece woff2 Google (MIT) — pełne teksty
 w katalogu licenses/. Niniejsza nota ich nie obejmuje i nie ogranicza
 praw wynikających z ich licencji.
 
