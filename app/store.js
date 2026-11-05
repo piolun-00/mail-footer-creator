@@ -64,6 +64,17 @@ export function migrate(p) {
   // miejsce na przyszłe zmiany formatu (p.v)
   p.layout = { mode: 'fluid', maxWidth: 600, gmailWidth: 288, typo: true, ...(p.layout || {}) };
   p.hosting = { base: '', ...(p.hosting || {}) };
+  // dawny „adres folderu” → linki przy każdym pliku
+  if (p.hosting.base) {
+    const base = p.hosting.base.replace(/\/?$/, '/');
+    const sl = s => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/ł/g, 'l').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'plik';
+    (p.images || []).forEach(i => {
+      if (i.light && !i.light.url) i.light.url = `${base}obrazki/${sl(i.name)}-jasny.png`;
+      if (i.dark && i.dark.mode !== 'none' && !i.dark.url) i.dark.url = `${base}obrazki/${sl(i.name)}-ciemny.png`;
+    });
+    (p.fonts || []).forEach(f => { if (f.file && !f.url) f.url = `${base}fonty/${sl(f.family)}.${(f.file.name.match(/\.([a-z0-9]+)$/i) || [, 'woff2'])[1].toLowerCase()}`; });
+    p.hosting.base = '';
+  }
   p.brand.dark = { colorText: '#ffffff', colorMuted: '#b9b9b2', ...(p.brand.dark || {}) };
   p.images ||= []; p.fonts ||= []; p.people ||= []; p.blocks ||= [];
   return p;

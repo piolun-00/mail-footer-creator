@@ -74,7 +74,7 @@ export async function registerFonts(project) {
 
 /* ---------- pakiet ZIP ----------
    projekt.json        — wszystko do dalszej edycji (z danymi fontów i obrazków)
-   hosting/            — folder do wrzucenia na serwer (obrazki/, fonty/)
+   pliki-na-serwer/    — gotowe pliki (PNG, fonty) do wrzucenia na serwer
    stopki/*.html       — gotowe pliki dla każdej osoby
    CZYTAJ.txt          — co z tym zrobić */
 const dataToBlob = d => fetch(d).then(r => r.blob());
@@ -82,7 +82,7 @@ const dataToBlob = d => fetch(d).then(r => r.blob());
 export async function exportPackage(project) {
   const zip = new window.JSZip();
   zip.file('projekt.json', JSON.stringify({ format: 'khorei-stopki', ...project }, null, 1));
-  for (const f of assetFiles(project)) zip.file('hosting/' + f.path, await dataToBlob(f.data));
+  for (const f of assetFiles(project)) zip.file('pliki-na-serwer/' + f.path.split('/').pop(), await dataToBlob(f.data));
   for (const p of project.people) {
     zip.file(`stopki/${slug(p.name)}.html`, fullHtml(project, p));
     zip.file(`stopki/${slug(p.name)}-apple-mail.txt`, appleMailCode(project, p));
@@ -90,11 +90,11 @@ export async function exportPackage(project) {
   zip.file('CZYTAJ.txt', [
     `Pakiet stopek: ${project.name}`, '',
     'projekt.json  — wczytaj w kreatorze („Wczytaj pakiet”), żeby edytować dalej.',
-    'hosting/      — wrzuć zawartość tego folderu na swój serwer (strona, Webflow, FTP, Netlify Drop).',
-    '                Potem w kreatorze: Marka → Hosting → wpisz adres folderu. Logo i fonty zaczną się',
-    '                ładować w mailach u odbiorców.',
+    'pliki-na-serwer/ — gotowe PNG i fonty. Wrzuć je na swój serwer (strona, Webflow, FTP, Netlify Drop),',
+    '                skopiuj link do każdego pliku i wklej go w kreatorze przy obrazie / foncie',
+    '                (pole „Link na serwerze”). Bez linku logo nie pokaże się odbiorcom.',
     'stopki/       — gotowe pliki HTML (Thunderbird, Outlook) i kod dla Apple Mail dla każdej osoby.', '',
-    project.hosting?.base ? `Aktualny adres hostingu: ${project.hosting.base}` : 'Adres hostingu: jeszcze nie ustawiony.',
+    ...project.images.map(i => `${i.name}: ${i.light?.url || 'BRAK LINKU'}`),
   ].join('\n'));
   const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
   download(blob, `${slug(project.name)}.stopka.zip`);

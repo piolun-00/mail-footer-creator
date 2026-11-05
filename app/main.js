@@ -211,28 +211,87 @@ function BrandColors({ project, update }) {
       <p class="note">Kolory ciemne włączają się same w Apple Mail, Thunderbirdzie i Outlook.com. Gmail przyciemnia stopkę po swojemu.</p></div>`;
 }
 
+/* Link na serwerze + automatyczne sprawdzenie, czy plik się wczytuje */
+function useLinkCheck(url, kind) {
+  const [st, setSt] = useState('');
+  useEffect(() => {
+    if (!url) { setSt(''); return; }
+    if (!/^https:\/\//i.test(url)) { setSt(/^http:\/\//i.test(url) ? 'http' : 'bad'); return; }
+    let live = true; setSt('wait');
+    if (kind === 'image') {
+      const i = new Image();
+      i.onload = () => live && setSt('ok'); i.onerror = () => live && setSt('fail');
+      i.src = url;
+    } else {
+      new FontFace('khorei-check-' + Math.random().toString(36).slice(2), `url(${url})`).load()
+        .then(() => live && setSt('ok')).catch(() => live && setSt('fail'));
+    }
+    return () => { live = false; };
+  }, [url]);
+  return st;
+}
+const LINK_STATUS = {
+  ok: ['ok', 'Działa — plik wczytuje się z serwera.'],
+  wait: ['', 'Sprawdzam…'],
+  http: ['bad', 'Link musi zaczynać się od https:// — część programów blokuje obrazy z http://.'],
+  bad: ['bad', 'To nie wygląda na link. Powinien zaczynać się od https://'],
+  failimage: ['bad', 'Nie udało się wczytać obrazu. Sprawdź, czy link prowadzi prosto do pliku .png/.jpg (a nie do strony z podglądem, jak w Google Drive czy Dropbox).'],
+  failfont: ['bad', 'Font nie wczytał się w przeglądarce. Sprawdź link; jeśli jest dobry, serwer może blokować fonty dla innych stron (ustawienie CORS) — w Apple Mail zwykle i tak zadziała.'],
+};
+function LinkField({ label, value, onInput, kind, placeholder }) {
+  const st = useLinkCheck(value, kind);
+  const [cls, msg] = LINK_STATUS[st === 'fail' ? 'fail' + kind : st] || ['', ''];
+  return html`<${Field} label=${label}>
+    <input type="text" value=${value ?? ''} placeholder=${placeholder} class=${cls === 'bad' ? 'is--warn' : ''} onInput=${e => onInput(e.target.value.trim())} />
+    ${msg && html`<span class=${'linkst is--' + (cls || 'wait')}>${msg}</span>`}<//>`;
+}
+
+/* Wyjaśnienie dla osób nietechnicznych */
+const NetlifySteps = () => html`
+  <details class="why"><summary>Nie masz serwera? Darmowy Netlify Drop krok po kroku</summary><ol>
+    <li>Pobierz pliki przyciskami „Pobierz PNG” przy obrazach (i pliki fontów, jeśli chcesz) i wrzuć je do jednego folderu na komputerze.</li>
+    <li>Wejdź na <a class="link" href="https://app.netlify.com/drop" target="_blank">app.netlify.com/drop</a> i załóż darmowe konto (wystarczy e-mail albo konto Google).</li>
+    <li>Przeciągnij folder na stronę. Po chwili dostaniesz adres w stylu <code>https://cos-tam-123.netlify.app</code>.</li>
+    <li>Link do pliku to ten adres + nazwa pliku, np. <code>https://cos-tam-123.netlify.app/logo-jasny.png</code>. Wklej go w polu „Link na serwerze” — kreator sprawdzi, czy działa.</li>
+  </ol><p>Nie usuwaj później tej strony ani plików — wysłane maile pobierają z niej logo.</p></details>`;
+
+const WhyOnline = ({ open }) => html`
+  <details class="why" open=${open}>
+    <summary>Dlaczego logo musi być w internecie?</summary>
+    <p><b>Stopka w mailu to nie naklejka, tylko przepis.</b> Mail nie wiezie ze sobą logo, a jedynie adres, pod którym program odbiorcy ma je pobrać w chwili otwarcia wiadomości. Jeśli logo jest tylko na Twoim komputerze, odbiorca zobaczy pusty kwadrat. Dlatego logo musi mieć link w internecie, tak jak zdjęcie na stronie www.</p>
+    <p><b>Czemu nie da się go po prostu wkleić?</b> Da się, ale Gmail i Outlook wklejone obrazki usuwają albo zamieniają na załącznik ze spinaczem. Każdy mail wyglądałby wtedy, jakby miał załącznik, a filtry antyspamowe chętniej by go odrzucały.</p>
+    <p><b>Co zrobić — od najprostszego:</b></p>
+    <ol>
+      <li><b>Masz stronę firmy?</b> Pobierz plik przyciskiem „Pobierz PNG” i poproś osobę od strony o wrzucenie go. Poda Ci link — wklej go obok.</li>
+      <li><b>Nie masz strony?</b> Użyj darmowego Netlify Drop (instrukcja niżej).</li>
+      <li><b>Logo jest już w internecie jako PNG lub JPG?</b> Kliknij je prawym przyciskiem na swojej stronie → „Kopiuj adres obrazka” i wklej jako link. (SVG nie zadziała w mailu.)</li>
+      <li><b>Plan B w Gmailu:</b> po wklejeniu stopki kliknij logo w edytorze podpisu → ikona obrazka → „Prześlij”. Gmail przechowa plik u siebie (działa tylko w Gmailu).</li>
+    </ol>
+  </details>`;
+
+const downloadData = (data, name) => fetch(data).then(r => r.blob()).then(b => download(b, name));
+
 function BrandFonts({ project, update, toast }) {
   const set = (id, k, v) => update(p => { p.fonts.find(f => f.id === id)[k] = v; }, `font.${id}.${k}`);
   const onFile = async (id, file) => {
     if (!/\.(woff2?|ttf|otf)$/i.test(file.name)) return toast('Wgraj plik .woff2, .woff, .ttf lub .otf.');
     const ff = await fontFromFile(file);
-    update(p => { const f = p.fonts.find(x => x.id === id); f.file = { data: ff.data, name: ff.name, type: ff.type }; if (/^Krój/.test(f.family)) f.family = ff.family; });
+    update(p => { const f = p.fonts.find(x => x.id === id); f.file = { data: ff.data, name: ff.name, type: ff.type }; if (/^(Krój|Nowy krój)/.test(f.family)) f.family = ff.family; });
   };
   return html`
-    <p class="note">Plik fontu zostaje w Twojej przeglądarce i w pakiecie projektu — nie trafia na żaden serwer. Żeby odbiorcy zobaczyli Twój krój, font musi być pod publicznym adresem (Hosting albo własny link) i wymaga <b>licencji webowej</b>.</p>
-    <p class="note"><b>Bez serwera nic się nie psuje:</b> program pocztowy użyje zamiennika i stopka nadal wygląda porządnie. Inaczej niż z logo — obraz bez serwera u odbiorcy znika.</p>
+    <p class="note">Wgraj plik kroju, żeby zobaczyć go w podglądzie. Żeby odbiorcy też go zobaczyli, wrzuć ten sam plik na serwer i wklej link. Serwowanie fontu w mailach wymaga <b>licencji webowej</b>.</p>
+    <p class="note"><b>Bez linku nic się nie psuje:</b> program pocztowy użyje zamiennika i stopka nadal wygląda porządnie. Inaczej niż z logo — obraz bez linku u odbiorcy znika.</p>
     ${project.fonts.map(f => html`
       <div class="card"><div class="card__head"><span class="card__name" style=${`font-family:'${f.family}',${FALLBACKS[f.fallback] || 'sans-serif'}`}>${f.family}</span>
         <span class="card__tools">${project.fonts.length > 1 && html`<button type="button" title="Usuń" onClick=${() => update(p => { p.fonts = p.fonts.filter(x => x.id !== f.id); p.blocks.forEach(b => { if (b.font === f.id) b.font = p.fonts[0].id; }); })}><${Icon} d=${I.del} /></button>`}</span></div>
       <div class="card__body">
         <${Text} label="Nazwa kroju" value=${f.family} onInput=${v => set(f.id, 'family', v)} />
-        <div class="file">
-          <span class="file__name">${f.file ? f.file.name : 'Brak pliku — działa zamiennik'}</span>
-          <${FileBtn} accept=".woff2,.woff,.ttf,.otf" onFile=${file => onFile(f.id, file)} small>${f.file ? 'Zmień plik' : 'Wgraj font'}<//>
-          ${f.file && html`<button type="button" class="btn is--small is--ghost" onClick=${() => set(f.id, 'file', null)}>Usuń</button>`}
-        </div>
-        <${Text} label="Adres webfontu (opcjonalnie)" value=${f.url} onInput=${v => set(f.id, 'url', v.trim())} placeholder="https://…/font.woff2"
-          hint="Jeśli font jest już w internecie. Inaczej kreator użyje adresu z Hostingu." />
+        <div class="step"><span class="step__n">1</span><div class="step__b">
+          <div class="file"><span class="file__name">${f.file ? f.file.name : 'Plik kroju (.woff2, .woff, .ttf, .otf)'}</span>
+            <${FileBtn} accept=".woff2,.woff,.ttf,.otf" onFile=${file => onFile(f.id, file)} small>${f.file ? 'Zmień' : 'Wgraj font'}<//>
+            ${f.file && html`<button type="button" class="btn is--small is--ghost" onClick=${() => set(f.id, 'file', null)}>Usuń</button>`}</div></div></div>
+        <div class="step"><span class="step__n">2</span><div class="step__b">
+          <${LinkField} label="Link do pliku na serwerze" kind="font" value=${f.url} onInput=${v => set(f.id, 'url', v)} placeholder="https://twojafirma.pl/email/font.woff2" /></div></div>
         <${Select} label="Zamiennik" value=${f.fallback} onChange=${v => set(f.id, 'fallback', v)} hint="Dla Gmaila, Outlooka i iPhone’a — nie obsługują własnych fontów."
           options=${[['serif', 'Szeryfowy — Georgia'], ['sans', 'Bezszeryfowy — Helvetica / Arial'], ['mono', 'Monospace — Menlo / Consolas'], ['custom', 'Własny stos…']]} />
         ${f.fallback === 'custom' && html`<${Text} label="Własny stos" value=${f.fallbackCustom} onInput=${v => set(f.id, 'fallbackCustom', v)} placeholder="Verdana, Arial, sans-serif" />`}
@@ -240,21 +299,6 @@ function BrandFonts({ project, update, toast }) {
     <button type="button" class="btn is--add" onClick=${() => update(p => { p.fonts.push({ id: uid('f'), family: 'Nowy krój', file: null, url: '', fallback: 'sans', fallbackCustom: '' }); })}>+ Dodaj krój</button>
     <p class="f__hint">Każdy blok tekstowy (Osoba, Kontakt, Tekst) wybiera swój krój w polu „Krój”. Dodaj drugi krój, jeśli np. klauzula ma być w innym.</p>`;
 }
-
-/* Wyjaśnienie dla osób nietechnicznych — używane w Obrazach, Hostingu i Eksporcie */
-const WhyOnline = ({ open }) => html`
-  <details class="why" open=${open}>
-    <summary>Dlaczego logo musi być w internecie?</summary>
-    <p><b>Stopka w mailu to nie naklejka, tylko przepis.</b> Mail nie wiezie ze sobą logo, a jedynie adres, pod którym program odbiorcy ma je pobrać w chwili otwarcia wiadomości. Jeśli logo jest tylko na Twoim komputerze, odbiorca zobaczy pusty kwadrat. Dlatego logo musi mieć adres w internecie, tak jak zdjęcie na stronie www.</p>
-    <p><b>Czemu nie da się go po prostu wkleić?</b> Da się, ale Gmail i Outlook wklejone obrazki usuwają albo zamieniają na załącznik ze spinaczem. Każdy mail wyglądałby wtedy, jakby miał załącznik, a filtry antyspamowe chętniej by go odrzucały.</p>
-    <p><b>Co zrobić — od najprostszego:</b></p>
-    <ol>
-      <li><b>Masz stronę firmy?</b> Pobierz folder w zakładce Hosting i poproś osobę od strony o wrzucenie go. Raz, na zawsze.</li>
-      <li><b>Nie masz strony?</b> Użyj darmowego Netlify Drop — instrukcja w zakładce Hosting.</li>
-      <li><b>Logo jest już w internecie?</b> Kliknij je prawym przyciskiem na swojej stronie → „Kopiuj adres obrazka” i wklej w Obrazach → „Własne adresy”.</li>
-      <li><b>Plan B w Gmailu:</b> po wklejeniu stopki kliknij logo w edytorze podpisu → ikona obrazka → „Prześlij”. Gmail przechowa plik u siebie (działa tylko w Gmailu).</li>
-    </ol>
-  </details>`;
 
 function BrandImages({ project, update, toast }) {
   const set = (id, fn, key) => update(p => fn(p.images.find(i => i.id === id)), key);
@@ -265,7 +309,7 @@ function BrandImages({ project, update, toast }) {
     const dark = alpha ? { mode: 'auto', color: '#ffffff', data: await tintImage(r.data, '#ffffff'), url: '' } : { mode: 'none', data: '', url: '' };
     const name = file.name.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ');
     update(p => { p.images.push({ id: uid('i'), name, w: r.w, h: r.h, light: { data: r.data, url: '', fileName: r.fileName }, dark }); });
-    toast(/svg/.test(file.type) ? 'SVG zamieniony na ostre PNG (3×).' : 'Dodano obraz.');
+    toast(/svg/.test(file.type) ? 'SVG zamieniony na ostre PNG (3×). Pobierz go i wrzuć na serwer.' : 'Dodano obraz.');
   };
   const replace = async (id, file, which) => {
     const r = await imageFromFile(file, project.images.find(i => i.id === id).w);
@@ -280,71 +324,44 @@ function BrandImages({ project, update, toast }) {
     else set(img.id, i => { i.dark = { ...i.dark, mode, data: mode === 'none' ? '' : i.dark?.data }; });
   };
   const retint = async (img, color) => { const d = await tintImage(img.light.data, color); set(img.id, i => { i.dark = { ...i.dark, color, data: d }; }, 'tint.' + img.id); };
+  const fname = (img, v) => imagePath(img, v).replace('obrazki/', '');
+  const hasDark = img => img.dark?.mode && img.dark.mode !== 'none';
+
   return html`
-    <p class="note">PNG, JPG lub SVG. SVG kreator zamienia na PNG w 3× rozdzielczości, bo Gmail i Outlook nie wyświetlają SVG. Plik zostaje w przeglądarce i w pakiecie projektu.</p>
-    <${WhyOnline} />
+    <p class="note">PNG, JPG lub SVG. SVG kreator zamienia na PNG w 3× rozdzielczości, bo Gmail i Outlook nie wyświetlają SVG. Przy każdym obrazie: <b>1.</b> wgraj, <b>2.</b> pobierz gotowy PNG i wrzuć go na serwer, <b>3.</b> wklej link.</p>
     ${project.images.map(img => html`
       <div class="card"><div class="card__head"><span class="card__name">${img.name}</span>
         <span class="card__tools"><button type="button" title="Usuń" onClick=${() => update(p => { p.images = p.images.filter(x => x.id !== img.id); p.blocks.forEach(b => { if (b.image === img.id) b.image = ''; }); })}><${Icon} d=${I.del} /></button></span></div>
       <div class="card__body">
-        <div class="thumbs">
-          <figure><div class="thumb is--light"><img src=${img.light.data || img.light.url} /></div><figcaption>Jasny · <${FileBtn} accept="image/*" onFile=${f => replace(img.id, f, 'light')} small>Zmień<//></figcaption></figure>
-          <figure><div class="thumb is--dark">${img.dark?.mode !== 'none' && (img.dark?.data || img.dark?.url) ? html`<img src=${img.dark.data || img.dark.url} />` : html`<span>brak</span>`}</div>
-            <figcaption>Ciemny${img.dark?.mode === 'file' && html` · <${FileBtn} accept="image/*" onFile=${f => replace(img.id, f, 'dark')} small>Zmień<//>`}</figcaption></figure>
+        <${Text} label="Nazwa" value=${img.name} onInput=${v => set(img.id, i => { i.name = v; }, 'img.name.' + img.id)} />
+        <div class="grid2">
+          <${Num} label="Domyślna szerokość" value=${img.w} onInput=${v => set(img.id, i => { const r = i.h / i.w; i.w = v; i.h = Math.round(v * r); }, 'img.w.' + img.id)} min="8" max="600" />
+          <${Select} label="Tryb ciemny" value=${img.dark?.mode || 'none'} onChange=${v => setDarkMode(img, v)}
+            options=${[['none', 'Brak'], ['auto', 'Automatyczna'], ['file', 'Własny plik']]} />
         </div>
-        <${Text} label="Nazwa" value=${img.name} onInput=${v => set(img.id, i => { i.name = v; }, 'img.name.' + img.id)} hint=${`Plik na serwerze: ${imagePath(img, 'light')}`} />
-        <${Num} label="Domyślna szerokość" value=${img.w} onInput=${v => set(img.id, i => { const r = i.h / i.w; i.w = v; i.h = Math.round(v * r); }, 'img.w.' + img.id)} min="8" max="600" />
-        <${Select} label="Wersja do trybu ciemnego" value=${img.dark?.mode || 'none'} onChange=${v => setDarkMode(img, v)}
-          options=${[['none', 'Brak — ten sam obraz'], ['auto', 'Automatyczna — przekolorowana'], ['file', 'Własny plik']]}
-          hint=${img.dark?.mode === 'auto' ? 'Każdy nieprzezroczysty piksel dostaje wybrany kolor. Dobre dla logotypów jednokolorowych.' : ''} />
-        ${img.dark?.mode === 'auto' && html`<${Color} label="Kolor wersji ciemnej" value=${img.dark.color || '#ffffff'} onInput=${v => retint(img, v)} />`}
-        ${img.dark?.mode === 'file' && !img.dark.data && html`<${FileBtn} accept="image/*" onFile=${f => replace(img.id, f, 'dark')}>Wgraj wersję ciemną<//>`}
-        <details class="more"><summary>Własne adresy obrazków (zamiast Hostingu)</summary>
-          <${Text} label="Adres wersji jasnej" value=${img.light.url} onInput=${v => set(img.id, i => { i.light.url = v.trim(); }, 'img.ul.' + img.id)} placeholder="https://…/logo.png" />
-          ${img.dark?.mode !== 'none' && html`<${Text} label="Adres wersji ciemnej" value=${img.dark.url} onInput=${v => set(img.id, i => { i.dark.url = v.trim(); }, 'img.ud.' + img.id)} placeholder="https://…/logo-ciemne.png" />`}
-        </details>
-      </div></div>`)}
-    <${FileBtn} accept="image/png,image/jpeg,image/svg+xml,image/webp,image/gif" onFile=${add}>+ Dodaj obraz<//>`;
-}
+        ${img.dark?.mode === 'auto' && html`<${Color} label="Kolor wersji ciemnej (każdy nieprzezroczysty piksel)" value=${img.dark.color || '#ffffff'} onInput=${v => retint(img, v)} />`}
 
-function BrandHosting({ project, update, toast }) {
-  const [check, setCheck] = useState({});
-  const base = project.hosting.base;
-  const files = assetFiles(project);
-  const url = path => base ? base.replace(/\/?$/, '/') + path : '';
-  const test = async () => {
-    const res = {};
-    await Promise.all(files.map(f => new Promise(ok => {
-      const u = url(f.path);
-      if (/\.(png|jpe?g)$/i.test(f.path)) { const i = new Image(); i.onload = () => { res[f.path] = true; ok(); }; i.onerror = () => { res[f.path] = false; ok(); }; i.src = u + '?t=' + Date.now(); }
-      else fetch(u, { method: 'HEAD', mode: 'no-cors' }).then(() => { res[f.path] = 'font'; ok(); }).catch(() => { res[f.path] = false; ok(); });
-    })));
-    setCheck(res);
-  };
-  const exportHosting = async () => {
-    const zip = new window.JSZip();
-    for (const f of files) zip.file(f.path, await fetch(f.data).then(r => r.blob()));
-    download(await zip.generateAsync({ type: 'blob' }), `${slug(project.name)}-hosting.zip`);
-  };
-  return html`
-    <p class="note">Logo i fonty w wysłanym mailu są pobierane z internetu w chwili otwarcia wiadomości. Pobierz folder, wrzuć jego zawartość na dowolny serwer (strona firmy, Webflow, FTP, <a class="link" href="https://app.netlify.com/drop" target="_blank">Netlify Drop</a>) i wpisz adres folderu poniżej.</p>
-    <div class="sub">
-      <div class="sub__head"><span class="sub__title">1. Folder do wrzucenia</span><button type="button" class="btn is--small" onClick=${exportHosting} disabled=${!files.length}>Pobierz folder (.zip)</button></div>
-      ${files.length ? html`<ul class="files">${files.map(f => html`<li><code>${f.path}</code>${check[f.path] === true ? html`<em class="ok">działa</em>` : check[f.path] === false ? html`<em class="bad">nie znaleziono</em>` : check[f.path] === 'font' ? html`<em>wysłano zapytanie</em>` : ''}</li>`)}</ul>` : html`<p class="note">Brak wgranych plików.</p>`}
-    </div>
-    <div class="sub">
-      <div class="sub__title">2. Adres folderu</div>
-      <${Text} label="Adres" value=${base} onInput=${v => update(p => { p.hosting.base = v.trim(); }, 'hosting')} placeholder="https://twojafirma.pl/email/" hint="Obrazki trafią pod adres + obrazki/…, fonty pod adres + fonty/…" />
-      <button type="button" class="btn is--small" onClick=${test} disabled=${!base || !files.length}>Sprawdź, czy pliki są dostępne</button>
-    </div>
-    <details class="why"><summary>Nie masz serwera? Netlify Drop krok po kroku</summary><ol>
-      <li>Kliknij <b>Pobierz folder (.zip)</b> powyżej i rozpakuj go (dwuklik).</li>
-      <li>Wejdź na <a class="link" href="https://app.netlify.com/drop" target="_blank">app.netlify.com/drop</a> i załóż darmowe konto (wystarczy e-mail albo konto Google).</li>
-      <li>Przeciągnij rozpakowany folder na stronę. Po chwili dostaniesz adres w stylu <code>https://cos-tam-123.netlify.app</code>.</li>
-      <li>Skopiuj ten adres i wklej go w polu <b>Adres</b> powyżej. Kliknij „Sprawdź” — przy plikach pojawi się „działa”.</li>
-    </ol><p>Adres możesz później zmienić na ładniejszy w ustawieniach Netlify. Nie usuwaj tej strony — wysłane maile pobierają z niej logo.</p></details>
+        ${[['light', 'Wersja jasna'], ...(hasDark(img) ? [['dark', 'Wersja ciemna']] : [])].map(([v, label]) => {
+          const d = v === 'dark' ? img.dark : img.light;
+          return html`<div class="sub">
+            <div class="sub__head"><span class="sub__title">${label}</span></div>
+            <div class="asset">
+              <div class=${'thumb is--' + v}>${d?.data || d?.url ? html`<img src=${d.data || d.url} />` : html`<span>brak</span>`}</div>
+              <div class="asset__b">
+                <div class="step"><span class="step__n">1</span><div class="step__b"><${FileBtn} accept="image/*" onFile=${f => replace(img.id, f, v)} small>${d?.data ? 'Zmień grafikę' : 'Wgraj grafikę'}<//></div></div>
+                <div class="step"><span class="step__n">2</span><div class="step__b">
+                  <button type="button" class="btn is--small" disabled=${!d?.data} onClick=${() => downloadData(d.data, fname(img, v))}>Pobierz PNG</button>
+                  <span class="f__hint"><code>${fname(img, v)}</code> — wrzuć na serwer</span></div></div>
+              </div>
+            </div>
+            <div class="step"><span class="step__n">3</span><div class="step__b">
+              <${LinkField} label="Link na serwerze" kind="image" value=${d?.url} onInput=${val => set(img.id, i => { (v === 'dark' ? i.dark : i.light).url = val; }, `img.u${v}.${img.id}`)} placeholder=${`https://twojafirma.pl/email/${fname(img, v)}`} /></div></div>
+          </div>`;
+        })}
+      </div></div>`)}
+    <${FileBtn} accept="image/png,image/jpeg,image/svg+xml,image/webp,image/gif" onFile=${add}>+ Dodaj obraz<//>
     <${WhyOnline} />
-    <p class="note">Nie zmieniaj później nazw plików ani nie usuwaj folderu — wysłane wcześniej maile stracą logo.</p>`;
+    <${NetlifySteps} />`;
 }
 
 function BrandLayout({ project, update }) {
@@ -409,12 +426,12 @@ const GUIDES = {
     '<b>Outlook klasyczny:</b> zmień końcówkę na <code>.htm</code> i wrzuć do <code>%APPDATA%\\Microsoft\\Signatures</code>.'],
 };
 
-function ExportPanel({ project, person, setActive, toast }) {
+function ExportPanel({ project, person, setActive, toast, go }) {
   const [guide, setGuide] = useState(null);
   const warns = [];
   const w = m => { if (!warns.includes(m)) warns.push(m); };
   signature(project, person, { target: 'email', warn: w });
-  project.fonts.forEach(f => { if (f.file && !f.url && !project.hosting.base) w(`Font „${f.family}” nie ma adresu w internecie — u odbiorców pokaże się zamiennik.`); });
+  project.fonts.forEach(f => { if (f.file && !f.url && !project.hosting.base) w(`Font „${f.family}” nie ma linku na serwerze — u odbiorców pokaże się zamiennik (to nic nie psuje).`); });
   if (project.blocks.some(b => b.type === 'image' && !b.image)) w('Blok Obraz nie ma wybranego obrazu.');
 
   const copyRich = async (variant, g) => {
@@ -433,7 +450,8 @@ function ExportPanel({ project, person, setActive, toast }) {
 
   return html`
     <${Select} label="Osoba" value=${person.id} onChange=${setActive} options=${project.people.map(p => [p.id, p.name || 'Bez nazwy'])} />
-    ${warns.length > 0 && html`<div class="warnbox">${warns.map(m => html`<p>${m}</p>`)}<${WhyOnline} /></div>`}
+    ${warns.length > 0 && html`<div class="warnbox">${warns.map(m => html`<p>${m}</p>`)}
+      <p><a class="link" onClick=${() => go({ kind: 'brand', tab: 'images' })}>Dodaj linki w Obrazach →</a></p><${WhyOnline} /></div>`}
     <div class="actions">
       <button type="button" class="btn is--primary is--wide" onClick=${() => copyRich(gmailVariant, 'gmail')}>Kopiuj dla Gmaila <small>${project.layout.mode === 'content' ? 'szerokość treści' : 'stała kolumna'}</small></button>
       <button type="button" class="btn is--wide" onClick=${() => copyRich('fluid', 'outlook')}>Kopiuj dla Outlooka i iPhone’a <small>płynna</small></button>
@@ -504,7 +522,7 @@ function Nav({ project, sel, go, update }) {
   const [adding, setAdding] = useState(false);
   const dragId = useRef(null);
   const move = (from, to) => update(p => { const [b] = p.blocks.splice(from, 1); p.blocks.splice(to, 0, b); });
-  const brandTabs = [['general', 'Ogólne'], ['colors', 'Kolory'], ['fonts', 'Fonty'], ['images', 'Obrazy'], ['hosting', 'Hosting'], ['layout', 'Układ']];
+  const brandTabs = [['general', 'Ogólne'], ['colors', 'Kolory'], ['fonts', 'Fonty'], ['images', 'Obrazy'], ['layout', 'Układ']];
   return html`
     <nav class="nav">
       <span class="nav__label">Marka</span>
@@ -612,7 +630,7 @@ function App() {
     catch (e) { toast(e.message); }
   };
 
-  const panelTitle = sel.kind === 'brand' ? { general: 'Ogólne', colors: 'Kolory', fonts: 'Fonty', images: 'Obrazy', hosting: 'Hosting', layout: 'Układ' }[sel.tab]
+  const panelTitle = sel.kind === 'brand' ? { general: 'Ogólne', colors: 'Kolory', fonts: 'Fonty', images: 'Obrazy', layout: 'Układ' }[sel.tab]
     : sel.kind === 'block' ? BLOCK_TYPES[project.blocks.find(b => b.id === sel.id)?.type]?.label : sel.kind === 'people' ? 'Osoby' : 'Eksport stopki';
   const block = sel.kind === 'block' && project.blocks.find(b => b.id === sel.id);
   const P = { project, update, toast, go: setSel };
@@ -639,7 +657,7 @@ function App() {
         <div class="top__actions">
           <button type="button" class="btn" onClick=${() => loadRef.current.click()}>Wczytaj pakiet</button>
           <input ref=${loadRef} type="file" accept=".zip" hidden onChange=${e => { const f = e.target.files[0]; e.target.value = ''; f && loadPackage(f); }} />
-          <button type="button" class="btn" onClick=${() => exportPackage(project).then(() => toast('Pakiet pobrany.'))} title="Cały projekt z fontami i obrazkami — do dalszej edycji i na hosting">Zapisz pakiet</button>
+          <button type="button" class="btn" onClick=${() => exportPackage(project).then(() => toast('Pakiet pobrany.'))} title="Cały projekt z fontami i obrazkami — do dalszej edycji, z gotowymi plikami na serwer">Zapisz pakiet</button>
           <button type="button" class="btn is--primary" onClick=${() => setSel({ kind: 'export' })}>Eksport</button>
         </div>
       </header>
@@ -657,7 +675,6 @@ function App() {
         ${sel.kind === 'brand' && sel.tab === 'colors' && html`<${BrandColors} ...${P} />`}
         ${sel.kind === 'brand' && sel.tab === 'fonts' && html`<${BrandFonts} ...${P} />`}
         ${sel.kind === 'brand' && sel.tab === 'images' && html`<${BrandImages} ...${P} />`}
-        ${sel.kind === 'brand' && sel.tab === 'hosting' && html`<${BrandHosting} ...${P} />`}
         ${sel.kind === 'brand' && sel.tab === 'layout' && html`<${BrandLayout} ...${P} />`}
         ${block && html`<${BlockForm} b=${block} ...${P} />`}
         ${sel.kind === 'people' && html`<${PeopleForm} ...${P} activeId=${person.id} setActive=${setActivePerson} />`}

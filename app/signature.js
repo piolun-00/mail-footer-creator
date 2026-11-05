@@ -47,7 +47,7 @@ export function imageSrc(project, img, variant, target, warn) {
   if (target === 'preview') return v.data || v.url || '';
   const url = v.url || joinUrl(project.hosting?.base, imagePath(img, variant));
   if (url) return url;
-  if (v.data) { warn?.(`„${img.name}” nie ma adresu w internecie — obrazek jest osadzony i pokaże się głównie w Apple Mail.`); return v.data; }
+  if (v.data) { warn?.(`Obraz „${img.name}”${variant === 'dark' ? ' (wersja ciemna)' : ''} nie ma linku na serwerze — w Gmailu i Outlooku odbiorca zobaczy puste miejsce. Bez linku obraz jest osadzony w stopce i pokaże się tylko w Apple Mail.`); return v.data; }
   return '';
 }
 
