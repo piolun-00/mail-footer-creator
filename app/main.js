@@ -29,7 +29,7 @@ function defaultBlock(type, project) {
     person:  { ...base, font: f, size: 13, lh: 17, color: 'text', weight: 400, showRole: true },
     image:   { ...base, image: project.images[0]?.id || '', width: project.images[0]?.w || 160, link: 'web' },
     contact: { ...base, font: f, size: 12, lh: 16, color: 'text', items: { phone: true, email: true, web: true } },
-    text:    { ...base, font: project.fonts[1]?.id || f, size: 9, lh: 12, color: 'muted', content: 'Nowy tekst' },
+    text:    { ...base, font: f, size: 9, lh: 12, color: 'muted', content: 'Nowy tekst' },
     divider: { ...base, full: false, width: 40, thick: 1, color: 'muted', space: 12 },
     spacer:  { ...base, height: 16, space: 0 },
   }[type];
@@ -219,7 +219,8 @@ function BrandFonts({ project, update, toast }) {
     update(p => { const f = p.fonts.find(x => x.id === id); f.file = { data: ff.data, name: ff.name, type: ff.type }; if (/^Krój/.test(f.family)) f.family = ff.family; });
   };
   return html`
-    <p class="note">Plik fontu zostaje w Twojej przeglądarce i w pakiecie projektu — nie trafia na żaden serwer. Do maili font musi być dostępny pod publicznym adresem (Hosting albo własny link) i wymaga <b>licencji webowej</b>.</p>
+    <p class="note">Plik fontu zostaje w Twojej przeglądarce i w pakiecie projektu — nie trafia na żaden serwer. Żeby odbiorcy zobaczyli Twój krój, font musi być pod publicznym adresem (Hosting albo własny link) i wymaga <b>licencji webowej</b>.</p>
+    <p class="note"><b>Bez serwera nic się nie psuje:</b> program pocztowy użyje zamiennika i stopka nadal wygląda porządnie. Inaczej niż z logo — obraz bez serwera u odbiorcy znika.</p>
     ${project.fonts.map(f => html`
       <div class="card"><div class="card__head"><span class="card__name" style=${`font-family:'${f.family}',${FALLBACKS[f.fallback] || 'sans-serif'}`}>${f.family}</span>
         <span class="card__tools">${project.fonts.length > 1 && html`<button type="button" title="Usuń" onClick=${() => update(p => { p.fonts = p.fonts.filter(x => x.id !== f.id); p.blocks.forEach(b => { if (b.font === f.id) b.font = p.fonts[0].id; }); })}><${Icon} d=${I.del} /></button>`}</span></div>
@@ -236,7 +237,8 @@ function BrandFonts({ project, update, toast }) {
           options=${[['serif', 'Szeryfowy — Georgia'], ['sans', 'Bezszeryfowy — Helvetica / Arial'], ['mono', 'Monospace — Menlo / Consolas'], ['custom', 'Własny stos…']]} />
         ${f.fallback === 'custom' && html`<${Text} label="Własny stos" value=${f.fallbackCustom} onInput=${v => set(f.id, 'fallbackCustom', v)} placeholder="Verdana, Arial, sans-serif" />`}
       </div></div>`)}
-    <button type="button" class="btn is--add" onClick=${() => update(p => { p.fonts.push({ id: uid('f'), family: 'Nowy krój', file: null, url: '', fallback: 'sans', fallbackCustom: '' }); })}>+ Dodaj krój</button>`;
+    <button type="button" class="btn is--add" onClick=${() => update(p => { p.fonts.push({ id: uid('f'), family: 'Nowy krój', file: null, url: '', fallback: 'sans', fallbackCustom: '' }); })}>+ Dodaj krój</button>
+    <p class="f__hint">Każdy blok tekstowy (Osoba, Kontakt, Tekst) wybiera swój krój w polu „Krój”. Dodaj drugi krój, jeśli np. klauzula ma być w innym.</p>`;
 }
 
 /* Wyjaśnienie dla osób nietechnicznych — używane w Obrazach, Hostingu i Eksporcie */

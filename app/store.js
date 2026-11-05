@@ -32,7 +32,7 @@ export const uid = (p = '') => p + Math.random().toString(36).slice(2, 8) + Date
 
 /* Nowy projekt: neutralny szablon, który od razu pokazuje możliwości */
 export function newProject(name = 'Nowa stopka') {
-  const fSans = uid('f'), fMono = uid('f');
+  const fMain = uid('f');
   return {
     v: 1, id: uid('p'), name, updated: Date.now(),
     brand: {
@@ -41,18 +41,17 @@ export function newProject(name = 'Nowa stopka') {
       web: 'twojafirma.pl', domain: 'twojafirma.pl',
     },
     fonts: [
-      { id: fSans, family: 'Krój główny', file: null, url: '', fallback: 'sans', fallbackCustom: '' },
-      { id: fMono, family: 'Krój klauzuli', file: null, url: '', fallback: 'mono', fallbackCustom: '' },
+      { id: fMain, family: 'Krój główny', file: null, url: '', fallback: 'sans', fallbackCustom: '' },
     ],
     images: [],
     hosting: { base: '' },
     layout: { mode: 'fluid', maxWidth: 600, gmailWidth: 288, typo: true },
     blocks: [
-      { id: uid('b'), type: 'person', font: fSans, size: 13, lh: 17, color: 'text', weight: 700, showRole: true, space: 20 },
+      { id: uid('b'), type: 'person', font: fMain, size: 13, lh: 17, color: 'text', weight: 700, showRole: true, space: 20 },
       { id: uid('b'), type: 'image', image: '', width: 160, link: 'web', space: 20 },
-      { id: uid('b'), type: 'contact', font: fSans, size: 12, lh: 16, color: 'text', items: { phone: true, email: true, web: true }, inline: false, space: 16 },
+      { id: uid('b'), type: 'contact', font: fMain, size: 12, lh: 16, color: 'text', items: { phone: true, email: true, web: true }, inline: false, space: 16 },
       { id: uid('b'), type: 'divider', full: false, width: 40, thick: 1, color: 'muted', space: 12 },
-      { id: uid('b'), type: 'text', font: fMono, size: 8, lh: 11, color: 'muted', upper: true, ls: 0, wrap: false, space: 0,
+      { id: uid('b'), type: 'text', font: fMain, size: 8, lh: 11, color: 'muted', upper: true, ls: 0, wrap: false, space: 0,
         content: 'Treść tej wiadomości wraz z załącznikami jest poufna i przeznaczona wyłącznie dla adresata. Jeśli wiadomość trafiła do Ciebie przez pomyłkę, poinformuj nadawcę i usuń ją.' },
     ],
     people: [
