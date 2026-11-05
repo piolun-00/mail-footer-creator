@@ -83,6 +83,7 @@ export async function exportPackage(project) {
   const zip = new window.JSZip();
   zip.file('projekt.json', JSON.stringify({ format: 'khorei-stopki', ...project }, null, 1));
   for (const f of assetFiles(project)) zip.file('pliki-na-serwer/' + f.path.split('/').pop(), await dataToBlob(f.data));
+  zip.file('pliki-na-serwer/_headers', '/*\n  Access-Control-Allow-Origin: *\n');   // Netlify: zgoda na pobieranie fontów z innych domen
   for (const p of project.people) {
     zip.file(`stopki/${slug(p.name)}.html`, fullHtml(project, p));
     zip.file(`stopki/${slug(p.name)}-apple-mail.txt`, appleMailCode(project, p));

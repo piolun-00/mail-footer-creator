@@ -225,8 +225,8 @@ function Card({ id, title, tools, children, sub, titleStyle }) {
     ${open && html`<div class=${sub ? 'sub__body' : 'card__body'}>${children}</div>`}
   </div>`;
 }
-/* Numer kroku jako indeks górny na końcu etykiety: „Link na serwerze³” */
-const Lbl = (text, n) => html`${text}<sup class="idx">${n}</sup>`;
+/* Numer kroku jako indeks górny na końcu etykiety: „Link na serwerze [3]” */
+const Lbl = (text, n) => html`${text}<sup class="idx">[${n}]</sup>`;
 
 /* Link na serwerze + automatyczne sprawdzenie, czy plik się wczytuje */
 function useLinkCheck(url, kind) {
@@ -264,13 +264,22 @@ function LinkField({ label, value, onInput, kind, placeholder }) {
 }
 
 /* Wyjaśnienie dla osób nietechnicznych */
-const NetlifySteps = () => html`
-  <details class="why"><summary>Nie masz serwera? Darmowy Netlify Drop krok po kroku</summary><ol>
-    <li>Pobierz pliki przyciskami „Pobierz PNG” przy obrazach (i pliki fontów, jeśli chcesz) i wrzuć je do jednego folderu na komputerze.</li>
-    <li>Wejdź na <a class="link" href="https://app.netlify.com/drop" target="_blank">app.netlify.com/drop</a> i załóż darmowe konto (wystarczy e-mail albo konto Google).</li>
-    <li>Przeciągnij folder na stronę. Po chwili dostaniesz adres w stylu <code>https://cos-tam-123.netlify.app</code>.</li>
-    <li>Link do pliku to ten adres + nazwa pliku, np. <code>https://cos-tam-123.netlify.app/logo-jasny.png</code>. Wklej go w polu „Link na serwerze” — kreator sprawdzi, czy działa.</li>
-  </ol><p>Nie usuwaj później tej strony ani plików — wysłane maile pobierają z niej logo.</p></details>`;
+const NetlifySteps = ({ project }) => html`
+  <details class="why"><summary>Nie masz serwera? Netlify Drop</summary><ol>
+    <li><button type="button" class="btn is--small" onClick=${() => serverFolder(project)}>Pobierz folder na serwer (.zip)</button> — wszystkie obrazy i fonty w jednym folderze. Rozpakuj go.</li>
+    <li>Wejdź na <a class="link" href="https://app.netlify.com/drop" target="_blank">app.netlify.com/drop</a> i załóż darmowe konto (e-mail albo konto Google).</li>
+    <li>Przeciągnij folder na stronę. Dostaniesz adres w stylu <code>https://cos-tam-123.netlify.app</code>.</li>
+    <li>Link do pliku to adres + nazwa pliku, np. <code>https://cos-tam-123.netlify.app/logo-jasny.png</code>. Wklej go przy obrazie albo foncie.</li>
+  </ol><p>W folderze jest też plik <code>_headers</code> — pozwala programom pocztowym pobierać z Netlify także fonty. Nie usuwaj później tej strony: wysłane maile pobierają z niej logo.</p></details>`;
+
+/* Folder na serwer: płaska lista plików + _headers (CORS dla fontów na Netlify) */
+async function serverFolder(project) {
+  const zip = new window.JSZip();
+  for (const f of assetFiles(project)) zip.file(f.path.split('/').pop(), await fetch(f.data).then(r => r.blob()));
+  zip.file('_headers', HEADERS);
+  download(await zip.generateAsync({ type: 'blob' }), `${slug(project.name)}-pliki-na-serwer.zip`);
+}
+const HEADERS = '/*\n  Access-Control-Allow-Origin: *\n';
 
 const WhyOnline = ({ open }) => html`
   <details class="why" open=${open}>
@@ -296,8 +305,8 @@ function BrandFonts({ project, update, toast }) {
     update(p => { const f = p.fonts.find(x => x.id === id); f.file = { data: ff.data, name: ff.name, type: ff.type }; if (/^(Krój|Nowy krój)/.test(f.family)) f.family = ff.family; });
   };
   return html`
-    <p class="note">Wgraj plik kroju<sup class="idx">1</sup>, żeby zobaczyć go w podglądzie. Żeby odbiorcy też go zobaczyli, wrzuć ten sam plik na serwer i wklej link<sup class="idx">2</sup>. Serwowanie fontu w mailach wymaga <b>licencji webowej</b>.</p>
-    <p class="note"><b>Bez linku nic się nie psuje:</b> program pocztowy użyje zamiennika i stopka nadal wygląda porządnie. Inaczej niż z logo — obraz bez linku u odbiorcy znika.</p>
+    <p class="note">Wgraj plik<sup class="idx">[1]</sup> i wklej jego link na serwerze<sup class="idx">[2]</sup>. Bez linku stopka użyje zamiennika — nic się nie psuje. Font w mailach wymaga <b>licencji webowej</b>.</p>
+    <${NetlifySteps} project=${project} />
     ${project.fonts.map(f => html`
       <${Card} id=${'font-' + f.id} title=${f.family} titleStyle=${`font-family:'${f.family}',${FALLBACKS[f.fallback] || 'sans-serif'}`}
         tools=${project.fonts.length > 1 && html`<button type="button" title="Usuń" onClick=${() => update(p => { p.fonts = p.fonts.filter(x => x.id !== f.id); p.blocks.forEach(b => { if (b.font === f.id) b.font = p.fonts[0].id; }); })}><${Icon} d=${I.del} /></button>`}>
@@ -343,9 +352,9 @@ function BrandImages({ project, update, toast }) {
   const hasDark = img => img.dark?.mode && img.dark.mode !== 'none';
 
   return html`
-    <p class="note">PNG, JPG lub SVG. SVG kreator zamienia na PNG w 3× rozdzielczości, bo Gmail i Outlook nie wyświetlają SVG. Przy każdym obrazie: wgraj grafikę<sup class="idx">1</sup>, pobierz gotowy PNG i wrzuć go na serwer<sup class="idx">2</sup>, wklej link<sup class="idx">3</sup>.</p>
+    <p class="note">Wgraj grafikę<sup class="idx">[1]</sup>, pobierz PNG na serwer<sup class="idx">[2]</sup>, wklej link<sup class="idx">[3]</sup>. SVG zamienimy na PNG — w mailach nie działa.</p>
     <${WhyOnline} />
-    <${NetlifySteps} />
+    <${NetlifySteps} project=${project} />
     ${project.images.map(img => html`
       <${Card} id=${'img-' + img.id} title=${img.name}
         tools=${html`<button type="button" title="Usuń" onClick=${() => update(p => { p.images = p.images.filter(x => x.id !== img.id); p.blocks.forEach(b => { if (b.image === img.id) b.image = ''; }); })}><${Icon} d=${I.del} /></button>`}>
