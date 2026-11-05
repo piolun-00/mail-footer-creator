@@ -4,10 +4,10 @@
 import { h, render } from 'preact';
 import { useState, useEffect, useRef, useMemo, useCallback } from 'preact/hooks';
 import htm from 'htm';
-import { db, uid, newProject, migrate, clone } from './store.js?v=2026.11.05.1148';
-import { signature, darkRules, fullHtml, appleMailCode, imagePath, fontPath, assetFiles, FALLBACKS, esc, slug, normUrl } from './signature.js?v=2026.11.05.1148';
-import { imageFromFile, tintImage, hasAlpha, fontFromFile, registerFonts, exportPackage, importPackage, download } from './files.js?v=2026.11.05.1148';
-import { convertFont, kb } from './fontconv.js?v=2026.11.05.1148';
+import { db, uid, newProject, migrate, clone } from './store.js?v=2026.11.05.1200';
+import { signature, darkRules, fullHtml, appleMailCode, imagePath, fontPath, assetFiles, FALLBACKS, esc, slug, normUrl } from './signature.js?v=2026.11.05.1200';
+import { imageFromFile, tintImage, hasAlpha, fontFromFile, registerFonts, exportPackage, importPackage, download } from './files.js?v=2026.11.05.1200';
+import { convertFont, kb } from './fontconv.js?v=2026.11.05.1200';
 
 const html = htm.bind(h);
 export const VERSION = new URL(import.meta.url).searchParams.get('v') || 'dev';

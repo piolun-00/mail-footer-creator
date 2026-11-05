@@ -152,8 +152,9 @@ details.why ol { margin:8px 0 0; padding-left:20px; display:grid; gap:6px; color
 .preview__bar { display:flex; align-items:center; gap:12px; padding:8px 16px; border-bottom:1px solid var(--line); background:var(--panel); flex-wrap:wrap; }
 .preview__bar .sep { width:1px; height:20px; background:var(--line); }
 .preview__info { color:var(--muted); margin-left:auto; white-space:nowrap; }
-.preview__stage { flex:1; overflow:auto; padding:32px; }
-.frame { position:relative; width:760px; max-width:100%; margin:0 auto; transition:width .2s ease; }
+.preview__stage { flex:1; overflow:auto; padding:32px; display:flex; flex-direction:column; }
+/* margin:auto w kolumnie flex = środek w pionie i poziomie, a przy wysokiej stopce zwykłe przewijanie (bez ucinania góry) */
+.frame { position:relative; width:760px; max-width:100%; margin:auto; flex:none; transition:width .2s ease; }
 .frame.is--drag { transition:none; }
 .ruler { position:relative; height:22px; margin-bottom:8px; color:var(--muted); font-size:11px; font-variant-numeric:tabular-nums;
   background:repeating-linear-gradient(to right,#b9b9b2 0 1px,transparent 1px 50px) left bottom / 100% 9px no-repeat,
