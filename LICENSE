@@ -1,0 +1,59 @@
+KHOREI — kreator stopek mailowych
+Copyright © 2026 Radosław Prośniak (KHOREI). Wszelkie prawa zastrzeżone.
+
+
+1. PRZEDMIOT
+
+Kod źródłowy w tym repozytorium — HTML, CSS i JavaScript kreatora, silnik
+składający stopki mailowe, szablony oraz instrukcja instalacji — stanowi
+utwór w rozumieniu ustawy o prawie autorskim i prawach pokrewnych.
+
+
+2. KORZYSTANIE Z KREATORA
+
+Każdy może bezpłatnie korzystać z kreatora pod adresem
+https://piolun-00.github.io/mail-footer-creator/ w celu tworzenia stopek mailowych,
+także na potrzeby komercyjne. Stopki utworzone w kreatorze (wygenerowany
+kod HTML) należą do ich twórców i mogą być używane bez ograniczeń.
+
+
+3. PUBLICZNA DOSTĘPNOŚĆ KODU NIE JEST LICENCJĄ
+
+Repozytorium jest publiczne wyłącznie z przyczyn technicznych (hosting
+na GitHub Pages). Bez pisemnej zgody autora NIE wolno w szczególności:
+  — powielać kodu kreatora w całości lub w części w innych projektach,
+  — uruchamiać kopii kreatora pod innym adresem,
+  — odsprzedawać, wynajmować ani udostępniać kodu osobom trzecim,
+  — tworzyć opracowań i utworów zależnych,
+  — usuwać lub zmieniać niniejszej noty.
+
+
+4. DANE UŻYTKOWNIKÓW
+
+Kreator działa wyłącznie w przeglądarce. Projekty, fonty i obrazki
+wgrane przez użytkownika zapisują się w jego przeglądarce (IndexedDB)
+i w pobieranych przez niego pakietach .zip. Nie są wysyłane do autora
+ani na żaden serwer.
+
+
+5. TREŚCI I KROJE UŻYTKOWNIKÓW
+
+Za treści, znaki towarowe, logotypy oraz licencje krojów pisma użytych
+w stopkach odpowiada wyłącznie użytkownik. Serwowanie fontów w stopkach
+mailowych zwykle wymaga licencji webowej obejmującej domenę użytkownika
+i użycie w wiadomościach e-mail.
+
+
+6. SKŁADNIKI OSÓB TRZECICH
+
+Repozytorium zawiera oprogramowanie open source na własnych licencjach:
+Preact (MIT), htm (Apache 2.0), JSZip (MIT lub GPLv3) — pełne teksty
+w katalogu licenses/. Niniejsza nota ich nie obejmuje i nie ogranicza
+praw wynikających z ich licencji.
+
+
+7. BRAK GWARANCJI
+
+Kreator jest udostępniany w obecnym stanie. Wygląd stopki zależy od
+programów pocztowych nadawcy i odbiorcy; ich ograniczenia opisuje
+instrukcja (instrukcja.html).

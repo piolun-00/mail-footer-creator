@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="pl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>KHOREI&nbsp;— instalacja stopki mailowej</title>
+<style>
+  :root { --red:#111111; --ink:#111111; --mute:#77776f; --line:#e2e2dd; --ui:"ABC Areal Variable", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:500 14px/1.55 var(--ui); color:var(--ink); background:#f4f4f2; -webkit-font-smoothing:antialiased; }
+  main { max-width:820px; margin:0 auto; padding:56px 28px 96px; }
+  h1 { font-size:24px; font-weight:500; margin:0 0 8px; }
+  .lead { color:var(--mute); margin:0 0 40px; }
+  h2 { font-size:18px; font-weight:500; margin:56px 0 12px; padding-top:24px; border-top:1px solid var(--line); }
+  h2 small { font-weight:400; color:var(--mute); font-size:14px; margin-left:8px; }
+  h3 { font-size:15px; margin:24px 0 6px; }
+  ol, ul { padding-left:22px; } li { margin:6px 0; }
+  code, kbd { font:13px/1.4 Menlo,Consolas,monospace; background:#f0f0f0; border:1px solid var(--line); border-radius:2px; padding:1px 5px; }
+  pre { font:13px/1.5 Menlo,Consolas,monospace; background:#1e1e1e; color:#eee; padding:14px 16px; border-radius:2px; overflow:auto; }
+  .note { background:#fff; border:1px solid var(--line); border-left:2px solid var(--ink); padding:12px 16px; border-radius:2px; margin:16px 0; }
+  table { width:100%; border-collapse:collapse; font-size:14px; background:#fff; }
+  th, td { text-align:left; padding:9px 10px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { font-weight:600; background:#f4f4f4; }
+  .y { color:#2a7a2a; } .p { color:#9a5b00; } .n { color:#c62d1f; }
+  nav a { color:var(--mute); margin-right:14px; white-space:nowrap; text-underline-offset:.15em; } nav a:hover { color:var(--ink); }
+</style></head>
+<body><main>
+
+<h1>Instalacja stopki mailowej</h1>
+<p class="lead"><a href="./" style="color:var(--red)">← Kreator</a><br>Jedna stopka, która sama zmienia kolory w&nbsp;trybie ciemnym (tam, gdzie klient poczty na to pozwala).</p>
+
+<nav>
+  <a href="#przed">Zanim zaczniesz</a><a href="#fonty">Fonty marki</a><a href="#apple">Apple&nbsp;Mail (Mac)</a><a href="#ios">iPhone / iPad</a>
+  <a href="#gmail">Gmail</a><a href="#outlook">Outlook</a><a href="#thunderbird">Thunderbird</a><a href="#inne">Inne</a><a href="#tabela">Co gdzie działa</a>
+</nav>
+
+<h2 id="przed">Zanim zaczniesz</h2>
+<p>Stopkę tworzysz w&nbsp;<a href="./" style="color:var(--red)"><b>kreatorze</b></a>: w&nbsp;zakładce <b>Eksport stopki</b> wybierz osobę i&nbsp;użyj jednego z&nbsp;przycisków:</p>
+<ul>
+  <li><b>Kopiuj dla Gmaila</b>: wersja ze stałą kolumną albo szerokością treści (Gmail wycina maksymalną szerokość, więc płynna rozlałaby się na całe okno).</li>
+  <li><b>Kopiuj dla Outlooka i&nbsp;iPhone’a</b>: wersja płynna, zawija się do 600&nbsp;px i&nbsp;zwęża na telefonie.</li>
+  <li><b>Kopiuj kod (Apple&nbsp;Mail)</b>: kod do wklejenia w&nbsp;plik podpisu Apple&nbsp;Mail.</li>
+  <li><b>Pobierz plik HTML</b>: do Thunderbirda i&nbsp;klasycznego Outlooka na Windowsie.</li>
+  <li><b>Zapisz pakiet</b> (górna belka): cały projekt w&nbsp;jednym pliku .zip — do dalszej edycji na innym komputerze i&nbsp;z&nbsp;folderem gotowym do wrzucenia na serwer.</li>
+</ul>
+<div class="note"><b>Logo i&nbsp;fonty muszą być w&nbsp;internecie.</b> Mail nie wiezie ich ze sobą — program odbiorcy pobiera je w&nbsp;chwili otwarcia wiadomości z&nbsp;adresu ustawionego w&nbsp;kreatorze (Marka → Hosting). Bez tego odbiorca zobaczy puste miejsce zamiast logo. <b>Nie zmieniaj później nazw plików ani nie usuwaj folderu na serwerze</b>, bo wysłane wcześniej maile stracą logo.</div>
+
+<h2 id="fonty">Fonty marki&nbsp;— gdzie je widać, a&nbsp;gdzie nie</h2>
+<p>Stopka może używać krojów marki wgranych w&nbsp;kreatorze. Programy pocztowe pobierają je z&nbsp;internetu, ale nie każdy na to pozwala. Fonty marki wyświetlą się tylko wtedy, gdy spełnione są <b>oba warunki</b>:</p>
+<ol>
+  <li><b>Nadawca</b> zainstalował stopkę w&nbsp;programie, który zachowuje jej kod stylów: <b>Apple&nbsp;Mail na Macu</b> (przez plik podpisu) albo <b>Thunderbird</b> (z&nbsp;pliku HTML). Gmail, Outlook i&nbsp;iPhone usuwają ten kod przy wklejaniu, więc z&nbsp;nich stopka zawsze wychodzi krojami zastępczymi.</li>
+  <li><b>Odbiorca</b> czyta maila w&nbsp;programie obsługującym własne fonty.</li>
+</ol>
+<table>
+  <tr><th>Program odbiorcy</th><th>Fonty marki</th></tr>
+  <tr><td>Apple&nbsp;Mail&nbsp;— Mac, iPhone, iPad</td><td class="y">tak</td></tr>
+  <tr><td>Outlook&nbsp;na&nbsp;Macu</td><td class="y">tak</td></tr>
+  <tr><td>Thunderbird</td><td class="y">tak</td></tr>
+  <tr><td>Samsung&nbsp;Email (Android)</td><td class="y">tak</td></tr>
+  <tr><td>Gmail&nbsp;— przeglądarka, Android, iPhone</td><td class="n">nie&nbsp;— kroje zastępcze</td></tr>
+  <tr><td>Outlook&nbsp;na&nbsp;Windowsie (klasyczny i&nbsp;nowy), Outlook.com</td><td class="n">nie&nbsp;— kroje zastępcze</td></tr>
+  <tr><td>Yahoo, poczty portali (WP, Onet, Interia)</td><td class="n">nie&nbsp;— kroje zastępcze</td></tr>
+</table>
+<p><b>Kroje zastępcze</b> ustawiasz w&nbsp;kreatorze przy każdym kroju (Marka → Fonty): Georgia dla krojów szeryfowych, Helvetica/Arial dla bezszeryfowych, Menlo/Consolas dla monospace. Układ, kolory, logo i&nbsp;sygnet są wszędzie takie same, bo logo to obrazek, a&nbsp;nie tekst.</p>
+<div class="note"><b>Licencja:</b> serwowanie fontów w&nbsp;stopce wymaga licencji <b>webowej</b> obejmującej Twoją domenę i&nbsp;użycie w&nbsp;e-mailach. Za licencje krojów odpowiada właściciel marki.</div>
+
+<h2 id="apple">Apple&nbsp;Mail na Macu <small>pełna wersja: fonty + automatyczny dark mode</small></h2>
+<ol>
+  <li>Otwórz <b>Mail → Ustawienia → Podpisy</b>. Wybierz konto i&nbsp;kliknij <kbd>+</kbd>. Nazwij podpis np. nazwą firmy i&nbsp;wpisz dowolny tekst, np.&nbsp;„x”.</li>
+  <li><b>Odznacz</b> opcję „Zawsze dopasowuj do domyślnej czcionki wiadomości”, inaczej Mail nadpisze fonty.</li>
+  <li>Zamknij Mail całkowicie: <kbd>Cmd</kbd>+<kbd>Q</kbd>.</li>
+  <li>W&nbsp;Finderze naciśnij <kbd>Shift</kbd>+<kbd>Cmd</kbd>+<kbd>G</kbd> i&nbsp;wklej jedną z&nbsp;dwóch ścieżek:
+    <pre>~/Library/Mobile Documents/com~apple~mail/Data/V10/MailData/Signatures/</pre>
+    (gdy podpisy synchronizują się przez iCloud), a&nbsp;jeśli tam nic nie ma:
+    <pre>~/Library/Mail/V10/MailData/Signatures/</pre>
+    Na nowszym macOS numer może być wyższy (<code>V11</code> itd.), wtedy wejdź w&nbsp;najwyższy.</li>
+  <li>Posortuj pliki według daty i&nbsp;znajdź najnowszy <code>.mailsignature</code>. To ten, który przed chwilą utworzyłeś.</li>
+  <li>Otwórz go w&nbsp;<b>TextEdit</b>. Na górze są linijki nagłówka (<code>Content-Transfer-Encoding</code>, <code>Content-Type</code>, <code>Message-Id</code>, <code>Mime-Version</code>) i&nbsp;pusta linia. <b>Zostaw je</b>, a&nbsp;całą resztę pliku zastąp kodem z&nbsp;przycisku <b>„Kopiuj kod (Apple&nbsp;Mail)”</b>.
+    <br><small>Jeśli TextEdit pokazuje sformatowany tekst zamiast kodu, zmień to w&nbsp;TextEdit → Ustawienia → Otwieranie i&nbsp;zapisywanie → „Wyświetlaj pliki HTML jako kod HTML”.</small></li>
+  <li>Zapisz plik, a&nbsp;potem w&nbsp;Finderze kliknij go i&nbsp;naciśnij <kbd>Cmd</kbd>+<kbd>I</kbd> → zaznacz <b>„Zablokowany”</b>. Bez tego Mail przy pierwszym otwarciu przywróci starą wersję.</li>
+  <li>Uruchom Mail i&nbsp;wyślij maila testowego do siebie, najlepiej na skrzynkę Gmail i&nbsp;na iPhone’a&nbsp;w&nbsp;trybie ciemnym.</li>
+</ol>
+<div class="note">W&nbsp;oknie ustawień Mail podgląd podpisu bywa pusty albo bez obrazków. To normalne, w&nbsp;nowej wiadomości stopka wyświetli się poprawnie.</div>
+
+<h2 id="ios">iPhone / iPad (aplikacja Mail)</h2>
+<ol>
+  <li>Na iPhonie otwórz kreator w&nbsp;<b>Safari</b> (albo link od osoby, która przygotowała stopkę) i&nbsp;stuknij <b>„Kopiuj dla Outlooka i&nbsp;iPhone’a”</b>.</li>
+  <li>Wejdź w&nbsp;<b>Ustawienia → Aplikacje → Mail → Podpis</b> i&nbsp;wklej.</li>
+  <li>Jeśli formatowanie zniknęło, <b>potrząśnij telefonem</b> i&nbsp;wybierz „Cofnij zmianę atrybutów”. Wtedy wróci wersja z&nbsp;logo i&nbsp;kolorami.</li>
+</ol>
+<div class="note">iOS wycina style, więc na iPhonie wysyłana jest wersja jasna, bez automatycznej zmiany kolorów. Jeśli Mail na Macu i&nbsp;iPhonie korzysta z&nbsp;tego samego konta iCloud, podpis z&nbsp;punktu Apple&nbsp;Mail może zsynchronizować się sam.</div>
+
+<h2 id="gmail">Gmail (przeglądarka)</h2>
+<ol>
+  <li>W&nbsp;kreatorze kliknij <b>„Kopiuj dla Gmaila”</b>.</li>
+  <li>W&nbsp;Gmailu kliknij <b>⚙ → Zobacz wszystkie ustawienia → Ogólne → Podpis → Utwórz nowy</b>. Nazwij go np. nazwą firmy i&nbsp;wklej (<kbd>Cmd</kbd>+<kbd>V</kbd>).</li>
+  <li><b>Zmieniasz stopkę?</b> Najpierw usuń całą starą treść z&nbsp;pola podpisu (Cmd+A, Delete), dopiero potem wklej nową.</li>
+  <li>Niżej, w&nbsp;„Domyślne ustawienia podpisu”, wybierz go dla nowych wiadomości i&nbsp;odpowiedzi.</li>
+  <li>Pod polem podpisu zaznacz <b>„Wstaw ten podpis przed cytowanym tekstem w&nbsp;odpowiedziach i&nbsp;usuń poprzedzający go wiersz „--””</b>. Bez tego Gmail dodaje nad stopką dwa myślniki.</li>
+  <li>Zjedź na sam dół strony i&nbsp;kliknij <b>Zapisz zmiany</b>.</li>
+</ol>
+<div class="note"><b>Numer telefonu na iPhonie</b> wyświetla się na niebiesko i&nbsp;z&nbsp;podkreśleniem. To iOS zamienia go w&nbsp;przycisk „Zadzwoń” i&nbsp;tylko w&nbsp;tej formie dzwonienie działa. W&nbsp;stopce wysyłanej z&nbsp;Gmaila nie da się tego koloru wyłączyć, bo Gmail usuwa potrzebny kod. W&nbsp;stopce z&nbsp;Apple&nbsp;Mail numer zostaje w&nbsp;kolorze marki.</div>
+<div class="note">Gmail nie obsługuje własnych fontów ani przełączania trybu, więc zamiast krojów marki wyświetlą się zamienniki ustawione w&nbsp;kreatorze. W&nbsp;ciemnym trybie aplikacji Gmail sam rozjaśnia tekst, a&nbsp;logo zostaje w&nbsp;kolorze wersji jasnej.</div>
+
+<h2 id="outlook">Outlook</h2>
+<h3>Nowy Outlook (Windows), Outlook.com, Outlook&nbsp;na&nbsp;Macu</h3>
+<ol>
+  <li>W&nbsp;kreatorze kliknij <b>„Kopiuj dla Outlooka i&nbsp;iPhone’a”</b>.</li>
+  <li><b>Ustawienia → Konta → Podpisy → Nowy podpis</b>, wklej i&nbsp;zapisz. Ustaw go jako domyślny dla nowych wiadomości i&nbsp;odpowiedzi.</li>
+</ol>
+<h3>Klasyczny Outlook&nbsp;na&nbsp;Windowsie</h3>
+<ol>
+  <li><b>Plik → Opcje → Poczta → Podpisy → Nowy</b>, nazwij go np. nazwą firmy i&nbsp;wklej stopkę z&nbsp;przycisku <b>„Kopiuj dla Outlooka i&nbsp;iPhone’a”</b>.</li>
+  <li>Albo inaczej: zamknij Outlooka, wpisz w&nbsp;pasku Eksploratora <code>%APPDATA%\Microsoft\Signatures</code>, wrzuć tam plik z&nbsp;przycisku <b>„Pobierz plik HTML”</b> ze zmienioną końcówką na <code>.htm</code> i&nbsp;wybierz ten podpis w&nbsp;ustawieniach.</li>
+</ol>
+<div class="note">Klasyczny Outlook renderuje maile silnikiem Worda. Fonty zastąpi Georgia i&nbsp;Courier New, ale układ zostanie zachowany.</div>
+
+<h2 id="thunderbird">Thunderbird</h2>
+<ol>
+  <li><b>Ustawienia kont</b> → wybierz konto.</li>
+  <li>Zaznacz <b>„Dołącz podpis z&nbsp;pliku”</b> i&nbsp;wskaż plik z&nbsp;przycisku <b>„Pobierz plik HTML”</b>.</li>
+  <li>Upewnij się, że konto tworzy wiadomości w&nbsp;HTML: <b>Tworzenie i&nbsp;adresowanie → „Twórz wiadomości w&nbsp;formacie HTML”</b>.</li>
+</ol>
+
+<h2 id="inne">Inne programy (Spark, Proton, Edison…)</h2>
+<p>Szukaj w&nbsp;ustawieniach sekcji „Podpis” i&nbsp;wklej stopkę skopiowaną z&nbsp;kreatora. Jeśli program ma tryb „HTML” albo „Edytuj kod”, wklej tam zawartość pobranego pliku HTML.</p>
+
+<h2 id="tabela">Co gdzie działa</h2>
+<table>
+  <tr><th>Program nadawcy</th><th>Logo i&nbsp;układ</th><th>Fonty marki*</th><th>Auto dark mode</th></tr>
+  <tr><td>Apple&nbsp;Mail (Mac)</td><td class="y">tak</td><td class="y">tak</td><td class="y">tak</td></tr>
+  <tr><td>iPhone / iPad Mail</td><td class="y">tak</td><td class="n">kroje zastępcze</td><td class="p">wersja jasna</td></tr>
+  <tr><td>Gmail</td><td class="y">tak</td><td class="n">zamienniki</td><td class="p">Gmail rozjaśnia tekst sam, logo zostaje w&nbsp;wersji jasnej</td></tr>
+  <tr><td>Outlook (nowy / web / Mac)</td><td class="y">tak</td><td class="n">kroje zastępcze</td><td class="p">częściowo</td></tr>
+  <tr><td>Outlook klasyczny (Windows)</td><td class="y">tak</td><td class="n">kroje zastępcze</td><td class="n">nie</td></tr>
+  <tr><td>Thunderbird</td><td class="y">tak</td><td class="y">tak</td><td class="y">tak</td></tr>
+</table>
+<p style="color:var(--mute);font-size:13px;margin-top:12px">* Fonty marki zobaczy tylko odbiorca w&nbsp;programie, który je obsługuje&nbsp;— patrz <a href="#fonty" style="color:var(--ink)">Fonty marki</a>. Wygląd zależy też od programu <b>odbiorcy</b>: mail wysłany z&nbsp;Apple&nbsp;Mail otwarty w&nbsp;Gmailu będzie wyglądał tak jak w&nbsp;wierszu „Gmail”.</p>
+
+<p style="color:var(--mute);font-size:12px;margin-top:56px;padding-top:16px;border-top:1px solid var(--line)">© 2026 KHOREI · <a href="https://github.com/piolun-00/mail-footer-creator/blob/main/LICENSE" style="color:var(--mute)">Licencja</a></p>
+</main></body></html>
