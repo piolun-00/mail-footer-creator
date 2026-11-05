@@ -211,6 +211,23 @@ function BrandColors({ project, update }) {
       <p class="note">Kolory ciemne włączają się same w Apple Mail, Thunderbirdzie i Outlook.com. Gmail przyciemnia stopkę po swojemu.</p></div>`;
 }
 
+/* Zwijany panel. Stan zwinięcia pamiętany po id, więc przetrwa przełączanie zakładek. */
+const openState = new Map();
+function Card({ id, title, tools, children, sub, titleStyle }) {
+  const [open, setOpen] = useState(openState.has(id) ? openState.get(id) : true);
+  const toggle = () => { openState.set(id, !open); setOpen(!open); };
+  return html`<div class=${(sub ? 'sub' : 'card') + (open ? ' is--open' : ' is--closed')}>
+    <div class=${sub ? 'sub__head' : 'card__head'}>
+      <button type="button" class="card__title" aria-expanded=${String(open)} onClick=${toggle}>
+        <span class="card__chev">${open ? '−' : '+'}</span><span class="card__name" style=${titleStyle}>${title}</span></button>
+      ${tools && html`<span class="card__tools">${tools}</span>`}
+    </div>
+    ${open && html`<div class=${sub ? 'sub__body' : 'card__body'}>${children}</div>`}
+  </div>`;
+}
+/* Numer kroku jako indeks górny na końcu etykiety: „Link na serwerze³” */
+const Lbl = (text, n) => html`${text}<sup class="idx">${n}</sup>`;
+
 /* Link na serwerze + automatyczne sprawdzenie, czy plik się wczytuje */
 function useLinkCheck(url, kind) {
   const [st, setSt] = useState('');
@@ -279,23 +296,21 @@ function BrandFonts({ project, update, toast }) {
     update(p => { const f = p.fonts.find(x => x.id === id); f.file = { data: ff.data, name: ff.name, type: ff.type }; if (/^(Krój|Nowy krój)/.test(f.family)) f.family = ff.family; });
   };
   return html`
-    <p class="note">Wgraj plik kroju, żeby zobaczyć go w podglądzie. Żeby odbiorcy też go zobaczyli, wrzuć ten sam plik na serwer i wklej link. Serwowanie fontu w mailach wymaga <b>licencji webowej</b>.</p>
+    <p class="note">Wgraj plik kroju<sup class="idx">1</sup>, żeby zobaczyć go w podglądzie. Żeby odbiorcy też go zobaczyli, wrzuć ten sam plik na serwer i wklej link<sup class="idx">2</sup>. Serwowanie fontu w mailach wymaga <b>licencji webowej</b>.</p>
     <p class="note"><b>Bez linku nic się nie psuje:</b> program pocztowy użyje zamiennika i stopka nadal wygląda porządnie. Inaczej niż z logo — obraz bez linku u odbiorcy znika.</p>
     ${project.fonts.map(f => html`
-      <div class="card"><div class="card__head"><span class="card__name" style=${`font-family:'${f.family}',${FALLBACKS[f.fallback] || 'sans-serif'}`}>${f.family}</span>
-        <span class="card__tools">${project.fonts.length > 1 && html`<button type="button" title="Usuń" onClick=${() => update(p => { p.fonts = p.fonts.filter(x => x.id !== f.id); p.blocks.forEach(b => { if (b.font === f.id) b.font = p.fonts[0].id; }); })}><${Icon} d=${I.del} /></button>`}</span></div>
-      <div class="card__body">
+      <${Card} id=${'font-' + f.id} title=${f.family} titleStyle=${`font-family:'${f.family}',${FALLBACKS[f.fallback] || 'sans-serif'}`}
+        tools=${project.fonts.length > 1 && html`<button type="button" title="Usuń" onClick=${() => update(p => { p.fonts = p.fonts.filter(x => x.id !== f.id); p.blocks.forEach(b => { if (b.font === f.id) b.font = p.fonts[0].id; }); })}><${Icon} d=${I.del} /></button>`}>
         <${Text} label="Nazwa kroju" value=${f.family} onInput=${v => set(f.id, 'family', v)} />
-        <div class="step"><span class="step__n">1</span><div class="step__b">
-          <div class="file"><span class="file__name">${f.file ? f.file.name : 'Plik kroju (.woff2, .woff, .ttf, .otf)'}</span>
+        <${Field} label=${Lbl('Plik kroju', 1)}>
+          <div class="file"><span class="file__name">${f.file ? f.file.name : '.woff2, .woff, .ttf lub .otf'}</span>
             <${FileBtn} accept=".woff2,.woff,.ttf,.otf" onFile=${file => onFile(f.id, file)} small>${f.file ? 'Zmień' : 'Wgraj font'}<//>
-            ${f.file && html`<button type="button" class="btn is--small is--ghost" onClick=${() => set(f.id, 'file', null)}>Usuń</button>`}</div></div></div>
-        <div class="step"><span class="step__n">2</span><div class="step__b">
-          <${LinkField} label="Link do pliku na serwerze" kind="font" value=${f.url} onInput=${v => set(f.id, 'url', v)} placeholder="https://twojafirma.pl/email/font.woff2" /></div></div>
+            ${f.file && html`<button type="button" class="btn is--small is--ghost" onClick=${() => set(f.id, 'file', null)}>Usuń</button>`}</div><//>
+        <${LinkField} label=${Lbl('Link do pliku na serwerze', 2)} kind="font" value=${f.url} onInput=${v => set(f.id, 'url', v)} placeholder="https://twojafirma.pl/email/font.woff2" />
         <${Select} label="Zamiennik" value=${f.fallback} onChange=${v => set(f.id, 'fallback', v)} hint="Dla Gmaila, Outlooka i iPhone’a — nie obsługują własnych fontów."
           options=${[['serif', 'Szeryfowy — Georgia'], ['sans', 'Bezszeryfowy — Helvetica / Arial'], ['mono', 'Monospace — Menlo / Consolas'], ['custom', 'Własny stos…']]} />
         ${f.fallback === 'custom' && html`<${Text} label="Własny stos" value=${f.fallbackCustom} onInput=${v => set(f.id, 'fallbackCustom', v)} placeholder="Verdana, Arial, sans-serif" />`}
-      </div></div>`)}
+      <//>`)}
     <button type="button" class="btn is--add" onClick=${() => update(p => { p.fonts.push({ id: uid('f'), family: 'Nowy krój', file: null, url: '', fallback: 'sans', fallbackCustom: '' }); })}>+ Dodaj krój</button>
     <p class="f__hint">Każdy blok tekstowy (Osoba, Kontakt, Tekst) wybiera swój krój w polu „Krój”. Dodaj drugi krój, jeśli np. klauzula ma być w innym.</p>`;
 }
@@ -328,11 +343,12 @@ function BrandImages({ project, update, toast }) {
   const hasDark = img => img.dark?.mode && img.dark.mode !== 'none';
 
   return html`
-    <p class="note">PNG, JPG lub SVG. SVG kreator zamienia na PNG w 3× rozdzielczości, bo Gmail i Outlook nie wyświetlają SVG. Przy każdym obrazie: <b>1.</b> wgraj, <b>2.</b> pobierz gotowy PNG i wrzuć go na serwer, <b>3.</b> wklej link.</p>
+    <p class="note">PNG, JPG lub SVG. SVG kreator zamienia na PNG w 3× rozdzielczości, bo Gmail i Outlook nie wyświetlają SVG. Przy każdym obrazie: wgraj grafikę<sup class="idx">1</sup>, pobierz gotowy PNG i wrzuć go na serwer<sup class="idx">2</sup>, wklej link<sup class="idx">3</sup>.</p>
+    <${WhyOnline} />
+    <${NetlifySteps} />
     ${project.images.map(img => html`
-      <div class="card"><div class="card__head"><span class="card__name">${img.name}</span>
-        <span class="card__tools"><button type="button" title="Usuń" onClick=${() => update(p => { p.images = p.images.filter(x => x.id !== img.id); p.blocks.forEach(b => { if (b.image === img.id) b.image = ''; }); })}><${Icon} d=${I.del} /></button></span></div>
-      <div class="card__body">
+      <${Card} id=${'img-' + img.id} title=${img.name}
+        tools=${html`<button type="button" title="Usuń" onClick=${() => update(p => { p.images = p.images.filter(x => x.id !== img.id); p.blocks.forEach(b => { if (b.image === img.id) b.image = ''; }); })}><${Icon} d=${I.del} /></button>`}>
         <${Text} label="Nazwa" value=${img.name} onInput=${v => set(img.id, i => { i.name = v; }, 'img.name.' + img.id)} />
         <div class="grid2">
           <${Num} label="Domyślna szerokość" value=${img.w} onInput=${v => set(img.id, i => { const r = i.h / i.w; i.w = v; i.h = Math.round(v * r); }, 'img.w.' + img.id)} min="8" max="600" />
@@ -343,25 +359,22 @@ function BrandImages({ project, update, toast }) {
 
         ${[['light', 'Wersja jasna'], ...(hasDark(img) ? [['dark', 'Wersja ciemna']] : [])].map(([v, label]) => {
           const d = v === 'dark' ? img.dark : img.light;
-          return html`<div class="sub">
-            <div class="sub__head"><span class="sub__title">${label}</span></div>
+          const fn = fname(img, v);
+          return html`<${Card} sub id=${'img-' + img.id + '-' + v} title=${label}>
             <div class="asset">
               <div class=${'thumb is--' + v}>${d?.data || d?.url ? html`<img src=${d.data || d.url} />` : html`<span>brak</span>`}</div>
               <div class="asset__b">
-                <div class="step"><span class="step__n">1</span><div class="step__b"><${FileBtn} accept="image/*" onFile=${f => replace(img.id, f, v)} small>${d?.data ? 'Zmień grafikę' : 'Wgraj grafikę'}<//></div></div>
-                <div class="step"><span class="step__n">2</span><div class="step__b">
-                  <button type="button" class="btn is--small" disabled=${!d?.data} onClick=${() => downloadData(d.data, fname(img, v))}>Pobierz PNG</button>
-                  <span class="f__hint"><code>${fname(img, v)}</code> — wrzuć na serwer</span></div></div>
+                <${Field} label=${Lbl('Grafika', 1)}><span><${FileBtn} accept="image/*" onFile=${f => replace(img.id, f, v)} small>${d?.data ? 'Zmień grafikę' : 'Wgraj grafikę'}<//></span><//>
+                <${Field} label=${Lbl('Plik na serwer', 2)}>
+                  <span class="dl"><button type="button" class="btn is--small" disabled=${!d?.data} onClick=${() => downloadData(d.data, fn)}>Pobierz PNG</button>
+                  <code class="dl__name" title=${fn}>${fn}</code></span><//>
               </div>
             </div>
-            <div class="step"><span class="step__n">3</span><div class="step__b">
-              <${LinkField} label="Link na serwerze" kind="image" value=${d?.url} onInput=${val => set(img.id, i => { (v === 'dark' ? i.dark : i.light).url = val; }, `img.u${v}.${img.id}`)} placeholder=${`https://twojafirma.pl/email/${fname(img, v)}`} /></div></div>
-          </div>`;
+            <${LinkField} label=${Lbl('Link na serwerze', 3)} kind="image" value=${d?.url} onInput=${val => set(img.id, i => { (v === 'dark' ? i.dark : i.light).url = val; }, `img.u${v}.${img.id}`)} placeholder=${`https://twojafirma.pl/email/${fn}`} />
+          <//>`;
         })}
-      </div></div>`)}
-    <${FileBtn} accept="image/png,image/jpeg,image/svg+xml,image/webp,image/gif" onFile=${add}>+ Dodaj obraz<//>
-    <${WhyOnline} />
-    <${NetlifySteps} />`;
+      <//>`)}
+    <${FileBtn} accept="image/png,image/jpeg,image/svg+xml,image/webp,image/gif" onFile=${add}>+ Dodaj obraz<//>`;
 }
 
 function BrandLayout({ project, update }) {
@@ -391,10 +404,9 @@ function PeopleForm({ project, update, activeId, setActive }) {
   return html`
     <div class="presets">${project.people.map(p => html`<button type="button" aria-pressed=${String(p.id === person.id)} onClick=${() => setActive(p.id)}>${p.name || 'Bez nazwy'}</button>`)}
       <button type="button" onClick=${() => { const id = uid('o'); update(p => { p.people.push({ id, name: '', role: '', phone: '', email: '' }); }); setActive(id); }}>+ Osoba</button></div>
-    <div class="card"><div class="card__head">Dane<span class="card__tools">
+    <${Card} id="person-data" title="Dane" tools=${html`
       <button type="button" title="Duplikuj" onClick=${() => { const id = uid('o'); update(p => { p.people.push({ ...clone(person), id, name: person.name + ' (kopia)' }); }); setActive(id); }}><${Icon} d=${I.dup} /></button>
-      ${project.people.length > 1 && html`<button type="button" title="Usuń" onClick=${() => { update(p => { p.people = p.people.filter(x => x.id !== person.id); }); setActive(project.people.find(x => x.id !== person.id).id); }}><${Icon} d=${I.del} /></button>`}
-    </span></div><div class="card__body">
+      ${project.people.length > 1 && html`<button type="button" title="Usuń" onClick=${() => { update(p => { p.people = p.people.filter(x => x.id !== person.id); }); setActive(project.people.find(x => x.id !== person.id).id); }}><${Icon} d=${I.del} /></button>`}`}>
       <${Text} label="Imię i nazwisko" value=${person.name} onInput=${v => set('name', v)} />
       <${Text} label="Stanowisko" value=${person.role} onInput=${v => set('role', v)} />
       <div class="grid2">
@@ -404,7 +416,7 @@ function PeopleForm({ project, update, activeId, setActive }) {
           onChange=${v => { const r = checkEmail(v, project.brand.domain); set('email', r.value); setWarn(w => ({ ...w, email: r.warn })); }} />
       </div>
       <p class="f__hint">Telefon sam ułoży się w format +48 XXX XXX XXX po wyjściu z pola.</p>
-    </div></div>`;
+    <//>`;
 }
 
 /* ============================================================
@@ -460,8 +472,8 @@ function ExportPanel({ project, person, setActive, toast, go }) {
     </div>
     ${guide && html`<div class="card guide"><div class="card__head">Co dalej<span class="card__tools"><button type="button" onClick=${() => setGuide(null)}><${Icon} d=${I.x} /></button></span></div>
       <div class="card__body"><ol>${GUIDES[guide].map(s => html`<li dangerouslySetInnerHTML=${{ __html: s }} />`)}</ol></div></div>`}
-    <div class="card"><div class="card__head">Gdzie widać fonty marki</div><div class="card__body"><p class="note">
-      Tylko gdy stopka jest wysyłana z <b>Apple Mail</b> lub <b>Thunderbirda</b>, a odbiorca czyta pocztę w Apple Mail, Outlooku na Macu, Thunderbirdzie lub Samsung Email. W Gmailu, Outlooku na Windowsie i z iPhone’a pojawi się zamiennik. Układ, kolory i logo są wszędzie te same.</p></div></div>`;
+    <${Card} id="export-fonts" title="Gdzie widać fonty marki"><p class="note">
+      Tylko gdy stopka jest wysyłana z <b>Apple Mail</b> lub <b>Thunderbirda</b>, a odbiorca czyta pocztę w Apple Mail, Outlooku na Macu, Thunderbirdzie lub Samsung Email. W Gmailu, Outlooku na Windowsie i z iPhone’a pojawi się zamiennik. Układ, kolory i logo są wszędzie te same.</p><//>`;
 }
 
 /* ============================================================
