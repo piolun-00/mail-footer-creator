@@ -38,6 +38,8 @@ export function imagePath(img, variant /* light|dark */) {
 export function fontPath(font, alt) {
   return `fonty/${slug(font.family)}.${alt === 'woff' ? 'woff' : extOf(font.file?.name, 'woff2')}`;
 }
+/* Adres linku: bez protokołu → https:// (www.instagram.com/x → https://www.instagram.com/x) */
+export const normUrl = u => { u = String(u || '').trim(); return /^(https?:|mailto:|tel:)/i.test(u) ? u : 'https://' + u.replace(/^\/+/, ''); };
 const joinUrl = (base, path) => base ? base.replace(/\/?$/, '/') + path : '';
 
 /* target: 'preview' → dane z przeglądarki; 'email' → publiczny adres (albo osadzenie z ostrzeżeniem) */
@@ -136,6 +138,15 @@ function blockCell(project, b, person, ctx) {
       const sep = b.inline ? `&nbsp;&nbsp;${esc(b.sepChar || '·')}&nbsp;&nbsp;` : '<br>';
       return `<td class="${txtClass(b)}" style="${textStyle(project, b)}${pad}">${items.join(sep)}</td>`;
     }
+    case 'links': {
+      // hiperłącza na zewnątrz: rezerwacja, social media, portfolio…
+      const items = (b.items || []).filter(x => x.label?.trim() && x.url?.trim());
+      if (!items.length) return '';
+      const a = linkStyle(project, b) + (b.underline ? 'text-decoration:underline;' : '');
+      const tags = items.map(x => `<a href="${esc(normUrl(x.url))}" target="_blank" style="${a}">${esc(T(x.label))}${b.arrow ? '&nbsp;→' : ''}</a>`);
+      const sep = b.inline ? `&nbsp;&nbsp;${esc(b.sepChar || '·')}&nbsp;&nbsp;` : '<br>';
+      return `<td class="${txtClass(b)}" style="${textStyle(project, b)}${pad}">${tags.join(sep)}</td>`;
+    }
     case 'text': {
       if (!b.content?.trim()) return '';
       const body = esc(T(b.content)).replace(/\n/g, '<br>');
@@ -208,7 +219,7 @@ export function styleBlock(project) {
   const msoFonts = project.fonts.map(f => `.hs-f-${f.id}{font-family:${f.fallback === 'custom' ? (f.fallbackCustom || 'Arial') : MSO_FALLBACK[f.fallback] || 'Arial'} !important;}`).join('');
   return `<style>
 ${faces ? `@media screen {\n${faces}\n}` : ''}
-.hs-txt a { text-decoration:none !important; }
+.hs-txt a { text-decoration:none; }
 a[x-apple-data-detectors] { color:inherit !important; text-decoration:none !important; font-size:inherit !important; font-family:inherit !important; font-weight:inherit !important; line-height:inherit !important; }
 @media (prefers-color-scheme: dark) {${dark}
 }

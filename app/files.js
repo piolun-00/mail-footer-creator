@@ -2,7 +2,7 @@
    Pliki: wczytywanie obrazów i fontów w przeglądarce (nic nie trafia na serwer),
    zamiana SVG na PNG, automatyczna wersja ciemna, pakiet ZIP. */
 
-import { assetFiles, fullHtml, appleMailCode, slug } from './signature.js';
+import { assetFiles, fullHtml, appleMailCode, slug } from './signature.js?v=2026.11.05.1148';
 
 export const readAsDataURL = file => new Promise((res, rej) => {
   const r = new FileReader(); r.onload = () => res(r.result); r.onerror = () => rej(r.error); r.readAsDataURL(file);

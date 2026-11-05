@@ -16,3 +16,7 @@ Stopka mailowa w Twoim brandingu: własne fonty, logo, sygnet i bloki. Wynik dzi
 Nic nie trafia na serwer: projekty, fonty i obrazki zostają w przeglądarce użytkownika i w pobieranym pakiecie `.zip`.
 
 © 2026 Radosław Prośniak (KHOREI) — warunki w [LICENSE](LICENSE).
+
+## Publikacja
+
+Strona publikuje się sama z gałęzi `main` (GitHub Pages). **Przed każdym wypchnięciem uruchom `./scripts/release.sh`** — nadaje numer wersji (`version.json`, `?v=` w plikach). Osoby z otwartym kreatorem zobaczą wtedy pasek „Jest nowa wersja kreatora” z przyciskiem Odśwież, a przeglądarki pobiorą świeże pliki.

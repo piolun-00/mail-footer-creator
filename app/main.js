@@ -4,12 +4,13 @@
 import { h, render } from 'preact';
 import { useState, useEffect, useRef, useMemo, useCallback } from 'preact/hooks';
 import htm from 'htm';
-import { db, uid, newProject, migrate, clone } from './store.js';
-import { signature, darkRules, fullHtml, appleMailCode, imagePath, fontPath, assetFiles, FALLBACKS, esc, slug } from './signature.js';
-import { imageFromFile, tintImage, hasAlpha, fontFromFile, registerFonts, exportPackage, importPackage, download } from './files.js';
-import { convertFont, kb } from './fontconv.js';
+import { db, uid, newProject, migrate, clone } from './store.js?v=2026.11.05.1148';
+import { signature, darkRules, fullHtml, appleMailCode, imagePath, fontPath, assetFiles, FALLBACKS, esc, slug, normUrl } from './signature.js?v=2026.11.05.1148';
+import { imageFromFile, tintImage, hasAlpha, fontFromFile, registerFonts, exportPackage, importPackage, download } from './files.js?v=2026.11.05.1148';
+import { convertFont, kb } from './fontconv.js?v=2026.11.05.1148';
 
 const html = htm.bind(h);
+export const VERSION = new URL(import.meta.url).searchParams.get('v') || 'dev';
 
 /* ============================================================
    POMOCNICZE
@@ -19,6 +20,7 @@ const BLOCK_TYPES = {
   image:   { label: 'Obraz',     hint: 'logo, sygnet, grafika' },
   contact: { label: 'Kontakt',   hint: 'telefon, e-mail, www' },
   text:    { label: 'Tekst',     hint: 'klauzula, adres, dowolny tekst' },
+  links:   { label: 'Linki',     hint: 'rezerwacja, social media, portfolio' },
   divider: { label: 'Linia',     hint: 'separator' },
   spacer:  { label: 'Odstęp',    hint: 'pusta przestrzeń' },
 };
@@ -31,6 +33,7 @@ function defaultBlock(type, project) {
     image:   { ...base, image: project.images[0]?.id || '', width: project.images[0]?.w || 160, link: 'web' },
     contact: { ...base, font: f, size: 12, lh: 16, color: 'text', items: { phone: true, email: true, web: true } },
     text:    { ...base, font: f, size: 9, lh: 12, color: 'muted', content: 'Nowy tekst' },
+    links:   { ...base, font: f, size: 12, lh: 16, color: 'text', items: [{ label: 'Umów wizytę', url: '' }], inline: false, arrow: true, underline: false },
     divider: { ...base, full: false, width: 40, thick: 1, color: 'muted', space: 12 },
     spacer:  { ...base, height: 16, space: 0 },
   }[type];
@@ -40,6 +43,7 @@ function blockSummary(b, project) {
   if (b.type === 'image') return project.images.find(i => i.id === b.image)?.name || 'wybierz obraz';
   if (b.type === 'text') return (b.content || '').slice(0, 28) + ((b.content || '').length > 28 ? '…' : '');
   if (b.type === 'spacer') return `${b.height} px`;
+  if (b.type === 'links') return (b.items || []).map(x => x.label).filter(Boolean).join(' · ') || 'dodaj link';
   if (b.type === 'divider') return b.full ? 'na całą szerokość' : `${b.width} px`;
   if (b.type === 'contact') return ['phone', 'email', 'web'].filter(k => b.items?.[k] !== false).map(k => ({ phone: 'tel.', email: 'e-mail', web: 'www' }[k])).join(' · ');
   return project.fonts.find(f => f.id === b.font)?.family || '';
@@ -165,6 +169,29 @@ function BlockForm({ b, project, update, go }) {
       <${Check} label="Zawijaj do szerokości reszty stopki" checked=${b.wrap} onChange=${v => set('wrap', v)}
         hint=${project.layout.mode === 'content' ? 'Tekst nie rozpycha stopki — układa się na szerokość najszerszego innego elementu (np. logo).' : 'Działa w układzie „Szerokość treści” (Marka → Układ).'} />
       ${space}`;
+    case 'links': {
+      const items = b.items || [];
+      const setItem = (i, k, v) => update(p => { p.blocks.find(x => x.id === b.id).items[i][k] = v; }, `b.${b.id}.it${i}.${k}`);
+      return html`
+        <p class="note">Linki otwierają się w przeglądarce odbiorcy. Adres możesz wkleić bez <code>https://</code> — dodamy go sami.</p>
+        ${items.map((it, i) => html`<${Card} sub id=${'link-' + b.id + '-' + i} title=${it.label || 'Nowy link'}
+            tools=${html`<button type="button" title="Wyżej" disabled=${i === 0} onClick=${() => update(p => { const a = p.blocks.find(x => x.id === b.id).items; [a[i - 1], a[i]] = [a[i], a[i - 1]]; })}><${Icon} d=${I.up} /></button>
+              <button type="button" title="Usuń" onClick=${() => update(p => { p.blocks.find(x => x.id === b.id).items.splice(i, 1); })}><${Icon} d=${I.del} /></button>`}>
+          <${Text} label="Tekst linku" value=${it.label} onInput=${v => setItem(i, 'label', v)} placeholder="Umów wizytę" />
+          <${Text} label="Adres" value=${it.url} onInput=${v => setItem(i, 'url', v.trim())} placeholder="booksy.com/twoj-salon"
+            warn=${it.url && !/^(https?:\/\/)?[^\s.]+\.[^\s]{2,}/i.test(it.url) && !/^mailto:/i.test(it.url) ? 'To nie wygląda na adres strony.' : ''}
+            hint=${it.url ? html`Prowadzi do: <a class="link" href=${normUrl(it.url)} target="_blank">${normUrl(it.url)}</a>` : ''} />
+        <//>`)}
+        <button type="button" class="btn is--add" onClick=${() => update(p => { p.blocks.find(x => x.id === b.id).items.push({ label: '', url: '' }); })}>+ Dodaj link</button>
+        <div class="checks">
+          <${Check} label="W jednej linii" checked=${b.inline} onChange=${v => set('inline', v)} />
+          <${Check} label="Strzałka →" checked=${b.arrow} onChange=${v => set('arrow', v)} />
+          <${Check} label="Podkreślenie" checked=${b.underline} onChange=${v => set('underline', v)} />
+        </div>
+        ${b.inline && html`<${Text} label="Separator" value=${b.sepChar || '·'} onInput=${v => set('sepChar', v)} />`}
+        <${TypeFields} b=${b} set=${set} project=${project} />
+        ${space}`;
+    }
     case 'image': {
       const img = project.images.find(i => i.id === b.image);
       return html`
@@ -612,11 +639,27 @@ function App() {
   const [menu, setMenu] = useState(false);
   const [saved, setSaved] = useState('');
   const [toastMsg, setToastMsg] = useState('');
+  const [newVersion, setNewVersion] = useState(null);
   const hist = useRef({ past: [], future: [], lastKey: '', lastT: 0 });
   const saveT = useRef();
   const loadRef = useRef();
 
   const toast = useCallback(m => { setToastMsg(m); clearTimeout(toast._t); toast._t = setTimeout(() => setToastMsg(''), 3000); }, []);
+
+  // Nowa wersja kreatora na serwerze → pasek z prośbą o odświeżenie (jak w edytorze brandmanuala)
+  useEffect(() => {
+    const check = async () => {
+      try {
+        const r = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' });
+        const { version } = await r.json();
+        if (VERSION !== 'dev' && version && version !== VERSION) setNewVersion(version);
+      } catch (e) {}
+    };
+    check();
+    const t = setInterval(check, 5 * 60 * 1000);
+    addEventListener('focus', check);
+    return () => { clearInterval(t); removeEventListener('focus', check); };
+  }, []);
 
   useEffect(() => { (async () => {
     let all = (await db.all()).map(migrate).sort((a, b) => b.updated - a.updated);
@@ -685,9 +728,11 @@ function App() {
   const P = { project, update, toast, go: setSel };
 
   return html`
-    <div class="app">
+    <div class=${'app' + (newVersion ? ' has--banner' : '')}>
+      ${newVersion && html`<div class="banner">Jest nowa wersja kreatora. Odśwież stronę — wszystkie projekty zostaną, bo zapisują się w przeglądarce.
+        <button type="button" class="btn" onClick=${() => { location.href = location.pathname + '?r=' + Date.now(); }}>Odśwież</button></div>`}
       <header class="top">
-        <div class="top__brand">KHOREI<span>stopki mailowe</span></div>
+        <div class="top__brand">KHOREI<span>stopki mailowe</span> <small>v${VERSION}</small></div>
         <div class="top__project">
           <button type="button" class="btn" onClick=${() => setMenu(!menu)}>${project.name} ▾</button>
           ${menu && html`<div class="menu">
